@@ -1,12 +1,16 @@
 import os
 from base64 import a85encode
 
-from flask import Flask, render_template, request, json, Response, abort
-
 from PIL import Image, ImageSequence
+import msgpack
+
 from werkzeug.exceptions import UnsupportedMediaType
+from flask import Flask, render_template, request, json, Response
+from flask_mqtt import Mqtt
+
 
 app = Flask(__name__)
+mqtt = Mqtt()
 
 DISPLAY_WIDTH = 144  # Width of the display
 DISPLAY_HEIGHT = 24  # Height of the display
@@ -15,6 +19,11 @@ DEFAULT_DELAY  = 5000
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+def send_image(frame_image, frames_info):
+    data = [frame_image, frames_info]
+    mqtt.publish('ledslie/frames/1', msgpack.packb(data))
 
 
 @app.route('/gif', methods=['POST'])
@@ -26,12 +35,12 @@ def gif():
         raise UnsupportedMediaType()
     # frames = []
     frames_info = []
-    sequence_id = str(a85encode(os.urandom(4)))
-    for frame_raw in ImageSequence.Iterator(im):
+    sequence_id = a85encode(os.urandom(4)).decode("ASCII")
+    for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
         frame_image, frame_info = process_frame(frame_raw, sequence_id)
-        # frames.append(frame_image)
+        frame_info['frame_nr'] = frame_nr
         frames_info.append(frame_info)
-        # outputter.send_image(frame_image, frames_info)
+        send_image(frame_image, frame_info)
 
     return Response(json.dumps({
         'frame_count': len(frames_info),
@@ -71,11 +80,12 @@ def process_frame(frame_raw, sequence_id):
         'duration': frame.info.get('duration', DEFAULT_DELAY),
         # 'data': repr([d for d in frame.tobytes()]),
     }
-    return frame_image, frame_info
+    return frame_image.tobytes(), frame_info
 
 
 if __name__ == '__main__':
     app.config.from_object('defaults')
     app.config.from_pyfile('ledslie.cfg')
+    mqtt.init_app(app)
     app.run()
 
