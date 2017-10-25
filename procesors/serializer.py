@@ -16,6 +16,7 @@ def on_connect(client, userdata, flags, rc):
 
 def send_serial(data):
     serial_port.write(data)
+#    print("would send %s bytes of data now" % len(data))
 
 
 def prepare_image(image_data):
@@ -31,6 +32,7 @@ def on_message(client, userdata, mqtt_msg):
     frame_image, frame_data = msgpack.unpackb(mqtt_msg.payload)
     data = prepare_image(frame_image)
     send_serial(data)
+    client.publish("ledslie/logs/serializer", "Send %s" % frame_data[b'id'])
 
 client = mqtt.Client()
 client.on_connect = on_connect

@@ -14,9 +14,13 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, mqtt_msg):
-    payload = msgpack.unpackb(mqtt_msg.payload)
+    print('--------------')
     print(mqtt_msg.topic)
-    pprint.pprint(payload)
+    try:
+        payload = msgpack.unpackb(mqtt_msg.payload)
+        pprint.pprint(payload)
+    except (msgpack.UnpackException, ValueError):
+        pprint.pprint(mqtt_msg.payload)
 
 client = mqtt.Client()
 client.on_connect = on_connect

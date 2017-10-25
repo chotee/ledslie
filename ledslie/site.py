@@ -35,7 +35,7 @@ def gif():
         raise UnsupportedMediaType()
     # frames = []
     frames_info = []
-    sequence_id = a85encode(os.urandom(4)).decode("ASCII")
+    sequence_id = generate_id()
     for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
         frame_image, frame_info = process_frame(frame_raw, sequence_id)
         frame_info['frame_nr'] = frame_nr
@@ -74,6 +74,7 @@ def process_frame(frame_raw, sequence_id):
         frame = frame.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
     frame_image = frame.convert("L")
     frame_info = {
+        'id': generate_id(),
         'width_orig': frame_raw.width,
         'height_orig': frame_raw.height,
         'sequence_id': sequence_id,
@@ -81,6 +82,10 @@ def process_frame(frame_raw, sequence_id):
         # 'data': repr([d for d in frame.tobytes()]),
     }
     return frame_image.tobytes(), frame_info
+
+
+def generate_id():
+    return a85encode(os.urandom(4)).decode("ASCII")
 
 
 if __name__ == '__main__':
