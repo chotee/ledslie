@@ -14,15 +14,27 @@ def on_connect(client, userdata, flags, rc):
     # client.subscribe("$SYS/#")
     client.subscribe("ledslie/#")
 
+
+def on_raw(mqtt_msg):
+    pprint.pprint(mqtt_msg.payload)
+
+def on_msgpack(mqtt_msg):
+    payload = msgpack.unpackb(mqtt_msg.payload)
+    pprint.pprint(payload)
+
+
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, mqtt_msg):
-    print('------ %s --------' % datetime.now())
-    print(mqtt_msg.topic)
-    try:
-        payload = msgpack.unpackb(mqtt_msg.payload)
-        pprint.pprint(payload)
-    except (msgpack.UnpackException, ValueError):
-        pprint.pprint(mqtt_msg.payload)
+    topic = mqtt_msg.topic
+    print('%s %s ' % (datetime.now(), topic))
+    func = {
+        'frames': on_raw,
+        'logs': on_raw,
+        'sequences': on_msgpack,
+    }[topic.split('/')[1]]
+
+    func(mqtt_msg)
+
 
 client = mqtt.Client()
 client.on_connect = on_connect

@@ -18,11 +18,7 @@ def on_connect(client, userdata, flags, rc):
 
 
 def send_serial(data):
-    if fake:
-        print("would serialize %d bytes of %d now" % (
-            len(data), crc32(data)))
-    else:
-        serial_port.write(data)
+    serial_port.write(data)
 
 
 def prepare_image(image_data):
@@ -37,7 +33,10 @@ def prepare_image(image_data):
 def on_message(client, userdata, mqtt_msg):
     image = mqtt_msg.payload
     data = prepare_image(image)
-    send_serial(data)
+    if not fake:
+        send_serial(data)
+    else:
+        print("would serialize %d bytes of %d now" % (len(image), crc32(image)))
     client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
         crc32(image), len(image)))
 
