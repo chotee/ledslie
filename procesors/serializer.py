@@ -1,22 +1,28 @@
+from zlib import crc32
+
 import paho.mqtt.client as mqtt
 
-import msgpack
 import serial
 
-serial_port = serial.Serial('/dev/ttyUSB0', baudrate=115200)
+fake = True
+
+if not fake:
+    serial_port = serial.Serial('/dev/ttyUSB0', baudrate=115200)
+else:
+    print("running fake.")
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
     client.subscribe("ledslie/frames/1")
 
 
 def send_serial(data):
-    serial_port.write(data)
-#    print("would send %s bytes of data now" % len(data))
+    if fake:
+        print("would serialize %d bytes of %d now" % (
+            len(data), crc32(data)))
+    else:
+        serial_port.write(data)
 
 
 def prepare_image(image_data):
@@ -29,10 +35,12 @@ def prepare_image(image_data):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, mqtt_msg):
-    frame_image, frame_data = msgpack.unpackb(mqtt_msg.payload)
-    data = prepare_image(frame_image)
+    image = mqtt_msg.payload
+    data = prepare_image(image)
     send_serial(data)
-    client.publish("ledslie/logs/serializer", "Send %s" % frame_data[b'id'])
+    client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
+        crc32(image), len(image)))
+
 
 client = mqtt.Client()
 client.on_connect = on_connect

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import paho.mqtt.client as mqtt
 
 import msgpack
@@ -14,7 +16,7 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, mqtt_msg):
-    print('--------------')
+    print('------ %s --------' % datetime.now())
     print(mqtt_msg.topic)
     try:
         payload = msgpack.unpackb(mqtt_msg.payload)

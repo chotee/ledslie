@@ -1,5 +1,6 @@
 import os
 from base64 import a85encode
+from zlib import crc32
 
 from PIL import Image, ImageSequence
 import msgpack
@@ -21,9 +22,9 @@ def index():
     return render_template('index.html')
 
 
-def send_image(frame_image, frames_info):
-    data = [frame_image, frames_info]
-    mqtt.publish('ledslie/frames/1', msgpack.packb(data))
+def send_image(seq_id, sequence):
+    data = [seq_id, sequence]
+    mqtt.publish('ledslie/sequences/1', msgpack.packb(data))
 
 
 @app.route('/gif', methods=['POST'])
@@ -33,18 +34,16 @@ def gif():
         im = Image.open(f)
     except OSError:
         raise UnsupportedMediaType()
-    # frames = []
-    frames_info = []
+    sequence = []
     sequence_id = generate_id()
     for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
-        frame_image, frame_info = process_frame(frame_raw, sequence_id)
-        frame_info['frame_nr'] = frame_nr
-        frames_info.append(frame_info)
-        send_image(frame_image, frame_info)
+        frame_image, frame_info = process_frame(frame_raw)
+        sequence.append([frame_image, frame_info])
+    send_image(sequence_id, sequence)
 
     return Response(json.dumps({
-        'frame_count': len(frames_info),
-        'frames': frames_info,
+        'frame_count': len(sequence),
+        'frames': [f[1] for f in sequence],
     }), mimetype='application/json')
 
     # return Response(json.dumps({
@@ -68,7 +67,7 @@ def gif():
     # }), mimetype='application/json')
 
 
-def process_frame(frame_raw, sequence_id):
+def process_frame(frame_raw):
     frame = frame_raw.copy()
     if (DISPLAY_WIDTH, DISPLAY_HEIGHT) != frame.size:
         frame = frame.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
@@ -77,8 +76,8 @@ def process_frame(frame_raw, sequence_id):
         'id': generate_id(),
         'width_orig': frame_raw.width,
         'height_orig': frame_raw.height,
-        'sequence_id': sequence_id,
         'duration': frame.info.get('duration', DEFAULT_DELAY),
+        'image_crc': crc32(frame_image.tobytes())
         # 'data': repr([d for d in frame.tobytes()]),
     }
     return frame_image.tobytes(), frame_info
