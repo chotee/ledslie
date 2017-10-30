@@ -9,19 +9,19 @@
 </head>
     <h1>Ledslie</h1>
     <h2>How to use</h2>
-{#    <div><p>Text: POST to /text/<br/>#}
-{#    <form action="/text/" method="post">#}
-{#        <input type="text" name="m" value="Your text"/>#}
-{#        <input type="submit" value="Show">#}
-{#    </form>#}
-{#    </p></div>#}
-    <div><p>Gifs POST to /gif/ with a valid 144x24 8bit grayscale, Content-Type: image/gif<br/>
+    <div>Text: POST to /text/<br/>
+    <form action="/text" method="post">
+        <input type="text" name="text" value="Your text"/>
+        <input type="text" name="duration" value="3000"/>
+        <input type="submit" value="Show">
+    </form>
+    </div>
+    <div>Gifs POST to /gif/ with a valid 144x24 8bit grayscale, Content-Type: image/gif<br/>
     <pre>$ curl -v -X POST --data-binary @tester/test.gif -H "Content-Type: image/gif" http://«my_ip»/gif</pre>
-    <form action="gif" method="post" enctype="multipart/form-data">
+    <form action="/gif" method="post" enctype="multipart/form-data">
         <input type="file" name="f">
         <input type="submit" value="Show">
     </form>
-    </p>
     </div>
 </body>
 </html>

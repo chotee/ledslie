@@ -37,8 +37,8 @@ def gif():
     sequence = []
     sequence_id = generate_id()
     for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
-        frame_image, frame_info = process_frame(frame_raw)
-        sequence.append([frame_image, frame_info])
+        # frame_image, frame_info =
+        sequence.append(process_frame(frame_raw))
     send_image(sequence_id, sequence)
 
     return Response(json.dumps({
@@ -46,26 +46,17 @@ def gif():
         'frames': [f[1] for f in sequence],
     }), mimetype='application/json')
 
-    # return Response(json.dumps({
-    #     # 'meta': str(frames[0].meta),
-    #     'nr_of_frames': len(frames),
-    # #     'frame_durations': [(i, f.meta['duration']) for i, f in enumerate(frames)],
-    # #     'shape': frames[0].shape,
-    #     'format': im.format,
-    #     # 'palette': im.getpalette(),
-    #     'mode': frames[0].mode,
-    #     'width': frames[0].width,
-    #     'height': frames[0].height,
-    #     'frame_durations': [(i, f.info['duration']) for i, f in enumerate(frames)],
-    #     'palette_size': int(len(im.getpalette())/3),
-    #     'bytes_size': len(frames[0].tobytes()),
-    #     'bytes': repr(frames[0].tobytes()),
-    #     'data_size': len([d for d in frames[0].getdata()]),
-    #     'data': repr([d for d in frames[0].getdata()]),
-    #     'histogram': repr(frames[0].histogram()),
-    #     'palette': repr(frames[0].getpalette()),
-    # }), mimetype='application/json')
 
+@app.route('/text', methods=['POST'])
+def text():
+    text = request.form['t']
+    duration = int(request.form['d'])
+    set_data = {'text': text, 'duration': duration}
+    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
+    return Response(json.dumps({
+        'text': text,
+        'duration': duration,
+    }), mimetype='application/json')
 
 def process_frame(frame_raw):
     frame = frame_raw.copy()
@@ -73,11 +64,11 @@ def process_frame(frame_raw):
         frame = frame.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
     frame_image = frame.convert("L")
     frame_info = {
-        'id': generate_id(),
-        'width_orig': frame_raw.width,
-        'height_orig': frame_raw.height,
+        # 'id': generate_id(),
+        # 'width_orig': frame_raw.width,
+        # 'height_orig': frame_raw.height,
         'duration': frame.info.get('duration', DEFAULT_DELAY),
-        'image_crc': crc32(frame_image.tobytes())
+        # 'image_crc': crc32(frame_image.tobytes())
         # 'data': repr([d for d in frame.tobytes()]),
     }
     return frame_image.tobytes(), frame_info

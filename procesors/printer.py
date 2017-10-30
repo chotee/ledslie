@@ -31,6 +31,7 @@ def on_message(client, userdata, mqtt_msg):
         'frames': on_raw,
         'logs': on_raw,
         'sequences': on_msgpack,
+        'typesetter': on_msgpack,
     }[topic.split('/')[1]]
 
     func(mqtt_msg)
