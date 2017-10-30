@@ -33,16 +33,20 @@ def typeset(msg):
     image = Image.new("L", (144, 24))
     draw = ImageDraw.Draw(image)
     font_path = os.path.realpath(os.path.join(CURDIR, "..", "resources", "DroidSansMono.ttf"))
-    print("font_path %s" % font_path)
-    font = ImageFont.truetype(font_path, 20)
+    # print("font_path %s" % font_path)
+    try:
+        font = ImageFont.truetype(font_path, 20)
+    except OSError as exc:
+        print("Can't find the font file '%s': %s" % (font_path, exc))
+        return None
     draw.text((0, 0), msg, (255), font=font)
     return image
 
 
 def send_image(client, image_id, image_data):
     data_objs = [image_id, image_data]
-    print("Sending the image data:")
-    pprint(data_objs)
+    # print("Sending the image data:")
+    # pprint(data_objs)
     data = msgpack.packb(data_objs)
     client.publish("ledslie/sequences/1", data)
 
@@ -50,9 +54,11 @@ def send_image(client, image_id, image_data):
 def on_message(client, userdata, mqtt_msg):
     data = msgpack.unpackb(mqtt_msg.payload)
     client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % data.get(b'text', 'Empty'))
-    pprint(data)
+    # pprint(data)
     msg = data[b'text'].decode('UTF-8')
     image_bytes = typeset(msg).tobytes()
+    if image_bytes is None:
+        return
     send_image(client, generate_id(), [[image_bytes, {'duration': data.get('duration', 5000)}],])
 
 
@@ -65,10 +71,12 @@ def main():
 
 
 if __name__ == '__main__':
-    print(sys.argv)
     if len(sys.argv) == 3 and sys.argv[1] == 'show':
         show_text = sys.argv[2]
         img = typeset(show_text)
-        img.show()
+        if img:
+            img.show()
+        else:
+            print("No image was generated.")
     else:
         main()
