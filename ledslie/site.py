@@ -48,15 +48,29 @@ def gif():
 
 
 @app.route('/text', methods=['POST'])
-def text():
-    text = request.form['t']
-    duration = int(request.form['d'])
-    set_data = {'text': text, 'duration': duration}
-    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
-    return Response(json.dumps({
+def text1():
+    text = request.form['text']
+    duration = int(request.form['duration'])
+    set_data = {
+        'type': '1line',
         'text': text,
-        'duration': duration,
-    }), mimetype='application/json')
+        'duration': duration}
+    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
+    return Response(json.dumps(set_data), mimetype='application/json')
+
+
+@app.route('/text3', methods=['POST'])
+def text3():
+    lines = request.form['l1'], request.form['l2'], request.form['l3']
+    duration = int(request.form['duration'])
+    set_data = {
+        'type': '3lines',
+        'lines': lines,
+        'duration': duration
+    }
+    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
+    return Response(json.dumps(set_data), mimetype='application/json')
+
 
 def process_frame(frame_raw):
     frame = frame_raw.copy()

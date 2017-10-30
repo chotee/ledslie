@@ -29,17 +29,30 @@ def generate_id():
     return a85encode(os.urandom(4)).decode("ASCII")
 
 
-def typeset(msg):
+def typeset_1line(msg):
     image = Image.new("L", (144, 24))
     draw = ImageDraw.Draw(image)
     font_path = os.path.realpath(os.path.join(CURDIR, "..", "resources", "DroidSansMono.ttf"))
-    # print("font_path %s" % font_path)
     try:
         font = ImageFont.truetype(font_path, 20)
     except OSError as exc:
         print("Can't find the font file '%s': %s" % (font_path, exc))
         return None
     draw.text((0, 0), msg, (255), font=font)
+    return image
+
+
+def typeset_3lines(lines):
+    image = Image.new("L", (144, 24))
+    draw = ImageDraw.Draw(image)
+    font_path = os.path.realpath(os.path.join(CURDIR, "..", "resources", "DroidSansMono.ttf"))
+    try:
+        font = ImageFont.truetype(font_path, 9)
+    except OSError as exc:
+        print("Can't find the font file '%s': %s" % (font_path, exc))
+        return None
+    for i, msg in enumerate(lines):
+        draw.text((0, (i*8)-2), msg, (255), font=font)
     return image
 
 
@@ -53,10 +66,17 @@ def send_image(client, image_id, image_data):
 
 def on_message(client, userdata, mqtt_msg):
     data = msgpack.unpackb(mqtt_msg.payload)
-    client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % data.get(b'text', 'Empty'))
-    # pprint(data)
-    msg = data[b'text'].decode('UTF-8')
-    image_bytes = typeset(msg).tobytes()
+    text_type = data[b'type']
+    if text_type == b'1line':
+        msg = data[b'text'].decode('UTF-8')
+        client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)
+        # pprint(data)
+        image_bytes = typeset_1line(msg).tobytes()
+    elif text_type == b'3lines':
+        lines = [l.decode('UTF-8') for l in data[b'lines']]
+        image_bytes = typeset_3lines(lines).tobytes()
+    else:
+        print("Unknown type %s" % text_type)
     if image_bytes is None:
         return
     send_image(client, generate_id(), [[image_bytes, {'duration': data.get('duration', 5000)}],])
@@ -72,8 +92,8 @@ def main():
 
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1] == 'show':
-        show_text = sys.argv[2]
-        img = typeset(show_text)
+        show_text = sys.argv[2].split(',')
+        img = typeset_3lines(show_text)
         if img:
             img.show()
         else:
