@@ -1,0 +1,9 @@
+- hosts: all
+  tasks:
+  - name: set machine hostname
+    hostname:
+      name: ledslie
+    become: true
+  roles:
+    - role: ledslie-processors
+    - role: ledslie-site
