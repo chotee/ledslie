@@ -1,0 +1,28 @@
+- name: Copy the files to the machine.
+  synchronize:
+    src: ../ledslie
+    dest: /home/vagrant/src/
+
+- name: Create Python virtualenv
+  command: virtualenv pyenv -p python3
+  args:
+    creates:  /home/vagrant/pyenv
+
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - python3-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libtiff-dev
+    - libwebp-dev
+    - liblcms2-dev
+    - zlib1g-dev
+    - nginx
+  become: yes
+
+- name: Install requirements dependencies
+  pip:
+    requirements: /home/vagrant/src/ledslie/requirements.txt
+    virtualenv: /home/vagrant/pyenv

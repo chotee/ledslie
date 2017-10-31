@@ -1,0 +1,3 @@
+- name: Install the mosquitto broker
+  apt:
+    name: mosquitto
