@@ -1,3 +1,4 @@
+flup-py3
 flask
 flask_mqtt
 pillow

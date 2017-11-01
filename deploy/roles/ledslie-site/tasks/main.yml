@@ -22,7 +22,35 @@
     - nginx
   become: yes
 
-- name: Install requirements dependencies
+- name: Install ledslie dependencies
   pip:
     requirements: /home/vagrant/src/ledslie/requirements.txt
     virtualenv: /home/vagrant/pyenv
+
+- name: Install the Ledslie software.
+  command: /home/vagrant/pyenv/bin/python setup.py install
+  args:
+    chdir: /home/vagrant/src/ledslie
+
+- name: Create /var/run/ledslie directory
+  file:
+    path: /var/run/ledslie
+    state: directory
+    owner: vagrant
+    group: www-data
+    mode: 0771
+  become: yes
+
+- name: Copy nginx configuration
+  template:
+    src: nginx-ledslie.conf
+    dest: /etc/nginx/sites-available/ledslie.conf
+  become: yes
+
+- name: Enabling nginx Ledslie configuration
+  file:
+    state: link
+    path:  /etc/nginx/sites-enabled/ledslie.conf
+    src: /etc/nginx/sites-available/ledslie.conf
+  become: yes
+
