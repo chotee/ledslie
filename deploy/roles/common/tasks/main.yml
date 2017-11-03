@@ -23,5 +23,5 @@
 - name: Create Python virtualenv
   command: virtualenv pyenv -p python3
   args:
-    creates:  /home/vagrant/pyenv
+    creates:  "/home/{{ ansible_user }}/pyenv"
   become: no

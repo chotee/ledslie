@@ -1,1 +1,1 @@
-LEDSLIE_CONFIG=/home/vagrant/src/ledslie/ledslie.cfg
+LEDSLIE_CONFIG=/home/{{ ansible_user }}/src/ledslie/ledslie.cfg

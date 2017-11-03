@@ -1,7 +1,7 @@
 - name: Copy the files to the machine.
   synchronize:
     src: ../ledslie
-    dest: /home/vagrant/src/
+    dest: "/home/{{ ansible_user }}/src/"
 
 - name: Install system dependencies
   apt:
@@ -19,25 +19,25 @@
 
 - name: Install ledslie dependencies
   pip:
-    requirements: /home/vagrant/src/ledslie/requirements.txt
-    virtualenv: /home/vagrant/pyenv
+    requirements: "/home/{{ ansible_user }}/src/ledslie/requirements.txt"
+    virtualenv: "/home/{{ ansible_user }}/pyenv"
 
 - name: Install the Ledslie software.
-  command: /home/vagrant/pyenv/bin/python setup.py install
+  command: "/home/{{ ansible_user }}/pyenv/bin/python setup.py install"
   args:
-    chdir: /home/vagrant/src/ledslie
+    chdir: "/home/{{ ansible_user }}/src/ledslie"
 
 - name: Forcing a flup package to install again
   pip:
     name: git+https://github.com/pquentin/flup-py3.git#egg=flup-py3
     state: forcereinstall
-    virtualenv: /home/vagrant/pyenv
+    virtualenv: "/home/{{ ansible_user }}/pyenv"
 
 - name: Create /var/run/ledslie directory
   file:
     path: /var/run/ledslie
     state: directory
-    owner: vagrant
+    owner: "{{ ansible_user }}"
     group: www-data
     mode: 0771
   become: yes

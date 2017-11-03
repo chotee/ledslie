@@ -4,8 +4,8 @@ After=network.target mosquitto.service
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
-User=vagrant
-ExecStart=/home/vagrant/pyenv/bin/python /home/vagrant/src/ledslie/processors/serializer.py
+User={{ ansible_user }}
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/serializer.py
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
 #Restart=on-failure
