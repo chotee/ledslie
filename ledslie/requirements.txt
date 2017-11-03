@@ -1,4 +1,4 @@
-flup-py3
+git+https://github.com/pquentin/flup-py3.git#egg=flup-py3
 flask
 flask_mqtt
 pillow

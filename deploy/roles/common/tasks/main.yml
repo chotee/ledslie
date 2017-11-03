@@ -16,5 +16,6 @@
   apt:
     name: "{{ item }}"
   with_items:
+    - git
     - python-pip
     - python-virtualenv

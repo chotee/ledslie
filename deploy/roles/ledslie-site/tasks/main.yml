@@ -32,6 +32,12 @@
   args:
     chdir: /home/vagrant/src/ledslie
 
+- name: Forcing a flup package to install again
+  pip:
+    name: git+https://github.com/pquentin/flup-py3.git#egg=flup-py3
+    state: forcereinstall
+    virtualenv: /home/vagrant/pyenv
+
 - name: Create /var/run/ledslie directory
   file:
     path: /var/run/ledslie
@@ -52,14 +58,6 @@
     name: ledslie-site
     state: restarted
     enabled: yes
-  become: yes
-
-- name: Change rights on socket.
-  file:
-    path: /var/run/ledslie/ledslie.sock
-    owner: vagrant
-    group: www-data
-    mode: 0774
   become: yes
 
 - name: Copy nginx configuration

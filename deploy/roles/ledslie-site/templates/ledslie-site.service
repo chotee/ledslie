@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
-User=vagrant
+User=www-data
 ExecStart=/home/vagrant/pyenv/bin/python /home/vagrant/src/ledslie/ledslie.fcgi
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
