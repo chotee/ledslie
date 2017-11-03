@@ -5,16 +5,18 @@
 
 import os, sys
 from base64 import a85encode
-from pprint import pprint
 
 from PIL import ImageFont
 from PIL import Image
 from PIL import ImageDraw
 
+from flask.config import Config
 import paho.mqtt.client as mqtt
 import msgpack
 
 CURDIR = os.path.split(__file__)[0]
+
+config = Config(".")
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -83,10 +85,14 @@ def on_message(client, userdata, mqtt_msg):
 
 
 def main():
+    config.from_object('ledslie.defaults')
+    config.from_envvar('LEDSLIE_CONFIG')
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("localhost", 1883, 60)
+    client.connect(config.get('MQTT_BROKER_URL'),
+                   config.get('MQTT_BROKER_PORT'),
+                   config.get('MQTT_KEEPALIVE'))
     client.loop_forever()
 
 

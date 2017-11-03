@@ -1,3 +1,6 @@
 - name: Install the mosquitto broker
   apt:
-    name: mosquitto
+    name: "{{ item }}"
+  with_items:
+    - mosquitto
+    - mosquitto-clients

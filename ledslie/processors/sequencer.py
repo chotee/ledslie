@@ -6,8 +6,12 @@ from collections import deque
 import msgpack
 from threading import Timer
 
+from flask.config import Config
+
 queue = deque()
 timer = None
+
+config = Config(".")
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -51,10 +55,14 @@ def schedule_image(client):
 
 
 def main():
+    config.from_object('ledslie.defaults')
+    config.from_envvar('LEDSLIE_CONFIG')
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("localhost", 1883, 60)
+    client.connect(config.get('MQTT_BROKER_URL'),
+                   config.get('MQTT_BROKER_PORT'),
+                   config.get('MQTT_KEEPALIVE'))
     client.loop_forever()
 
 

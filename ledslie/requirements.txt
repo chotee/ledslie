@@ -2,4 +2,4 @@ flask
 flask_mqtt
 pillow
 msgpack-python
-serial
+pyserial
