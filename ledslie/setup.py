@@ -17,5 +17,8 @@ setup(
             'static/*',
             # 'defaults.conf',
         ],
+        'processors': [
+            'resources'
+        ],
     },
 )

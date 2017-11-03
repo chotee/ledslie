@@ -19,3 +19,9 @@
     - git
     - python-pip
     - python-virtualenv
+
+- name: Create Python virtualenv
+  command: virtualenv pyenv -p python3
+  args:
+    creates:  /home/vagrant/pyenv
+  become: no

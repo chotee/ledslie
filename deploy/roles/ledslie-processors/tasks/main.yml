@@ -1,0 +1,21 @@
+- name: Installing systemd templates
+  template:
+    src: "{{ item }}.service"
+    dest: "/etc/systemd/system/{{ item }}.service"
+  with_items:
+    - ledslie-sequencer
+    - ledslie-serializer
+    - ledslie-typesetter
+  become: yes
+
+
+- name: Start ledslie processer services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+    enabled: yes
+  with_items:
+    - ledslie-sequencer
+    - ledslie-serializer
+    - ledslie-typesetter
+  become: yes

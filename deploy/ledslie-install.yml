@@ -3,5 +3,5 @@
     - { role: common, become: yes }
     - { role: cron-apt, become: yes }
     - { role: mosquitto, become: yes }
-    - role: ledslie-processors
     - role: ledslie-site
+    - role: ledslie-processors

@@ -92,9 +92,14 @@ def generate_id():
     return a85encode(os.urandom(4)).decode("ASCII")
 
 
-if __name__ == '__main__':
-    app.config.from_object('defaults')
+def make_app():
+    app.config.from_object('ledslie.defaults')
     app.config.from_envvar('LEDSLIE_CONFIG')
     mqtt.init_app(app)
-    app.run()
+    print("broker url: %s. port: %s." % (mqtt.broker_url, mqtt.broker_port))
+    return app
 
+
+if __name__ == '__main__':
+    site_app = make_app()
+    site_app.run()

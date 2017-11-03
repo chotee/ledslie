@@ -3,11 +3,6 @@
     src: ../ledslie
     dest: /home/vagrant/src/
 
-- name: Create Python virtualenv
-  command: virtualenv pyenv -p python3
-  args:
-    creates:  /home/vagrant/pyenv
-
 - name: Install system dependencies
   apt:
     name: "{{ item }}"
@@ -47,13 +42,19 @@
     mode: 0771
   become: yes
 
+- name: Installing /etc/default/ledslie
+  template:
+    src: defaults-ledslie
+    dest: /etc/default/ledslie
+  become: yes
+
 - name: Installing systemd templates
   template:
     src: ledslie-site.service
     dest: /etc/systemd/system/ledslie-site.service
   become: yes
 
-- name: Start ledslie services
+- name: Start ledslie site services
   systemd:
     name: ledslie-site
     state: restarted

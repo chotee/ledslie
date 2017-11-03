@@ -45,7 +45,7 @@ def typeset_1line(msg):
 def typeset_3lines(lines):
     image = Image.new("L", (144, 24))
     draw = ImageDraw.Draw(image)
-    font_path = os.path.realpath(os.path.join(CURDIR, "..", "resources", "DroidSansMono.ttf"))
+    font_path = os.path.realpath(os.path.join(CURDIR, "fonts", "DroidSansMono.ttf"))
     try:
         font = ImageFont.truetype(font_path, 9)
     except OSError as exc:
