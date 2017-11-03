@@ -1,0 +1,15 @@
+[Unit]
+Description=Ledslie website
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/default/ledslie
+User=vagrant
+ExecStart=/home/vagrant/pyenv/bin/python /home/vagrant/src/ledslie/ledslie.fcgi
+#ExecReload=/bin/kill -HUP $MAINPID
+#KillMode=process
+#Restart=on-failure
+
+[Install]
+#WantedBy=multi-user.target
+

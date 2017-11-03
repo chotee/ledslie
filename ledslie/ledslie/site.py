@@ -94,7 +94,7 @@ def generate_id():
 
 if __name__ == '__main__':
     app.config.from_object('defaults')
-    app.config.from_pyfile('ledslie.cfg')
+    app.config.from_envvar('LEDSLIE_CONFIG')
     mqtt.init_app(app)
     app.run()
 

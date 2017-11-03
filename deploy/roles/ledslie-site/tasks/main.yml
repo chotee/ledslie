@@ -41,6 +41,27 @@
     mode: 0771
   become: yes
 
+- name: Installing systemd templates
+  template:
+    src: ledslie-site.service
+    dest: /etc/systemd/system/ledslie-site.service
+  become: yes
+
+- name: Start ledslie services
+  systemd:
+    name: ledslie-site
+    state: restarted
+    enabled: yes
+  become: yes
+
+- name: Change rights on socket.
+  file:
+    path: /var/run/ledslie/ledslie.sock
+    owner: vagrant
+    group: www-data
+    mode: 0774
+  become: yes
+
 - name: Copy nginx configuration
   template:
     src: nginx-ledslie.conf
@@ -54,3 +75,9 @@
     src: /etc/nginx/sites-available/ledslie.conf
   become: yes
 
+- name: Restart nginx.
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
+  become: yes

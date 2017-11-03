@@ -11,10 +11,11 @@ setup(
     description='Led display',
     packages=find_packages(),
     install_requires=[str(requirement.req) for requirement in requirements],
-    # package_data = {
-    #     'ledslie': [
-    #         'templates/*',
-    #         'defaults.conf',
-    #     ],
-    # },
+    package_data = {
+        'ledslie': [
+            'templates/*',
+            'static/*',
+            # 'defaults.conf',
+        ],
+    },
 )

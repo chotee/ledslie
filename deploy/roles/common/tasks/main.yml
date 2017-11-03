@@ -7,15 +7,14 @@
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Upgrade all packages to the latest version
-  apt:
-    name: "*"
-    state: latest
+#- name: Upgrade all packages to the latest version
+#  apt:
+#    name: "*"
+#    state: latest
 
 - name: Install common python packages
   apt:
     name: "{{ item }}"
   with_items:
-    - daemontools
     - python-pip
     - python-virtualenv
