@@ -12,6 +12,37 @@ class GenericProcessor(object):
     pass
 
 
+class Image(object):
+    def __init__(self, img_data, **kwargs):
+        self.img_data = img_data
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+    def __bytes__(self):
+        return self.img_data
+
+class ImageSequence(object):
+    def __init__(self, config):
+        self.config = config
+        self.id = None
+        self.sequence = []
+
+    def load(self, payload):
+        self.id, seq = msgpack.unpackb(payload)
+        for image, image_info in seq:
+            if len(image) != self.config.get('DISPLAY_WIDTH') * self.config.get('DISPLAY_HEIGHT'):
+                break
+            try:
+                image_duration = image_info[b'duration']
+            except KeyError:
+                break
+            self.sequence.append(Image(image, duration=image_duration))
+        return self
+
+    def __iter__(self):
+        return iter(self.sequence)
+
+
 class Sequencer(GenericProcessor):
     def __init__(self, config):
         self.config = config
@@ -29,32 +60,23 @@ class Sequencer(GenericProcessor):
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, mqtt_msg):
         queue_started_empty = len(self.queue) == 0
-        seq_id, sequence = msgpack.unpackb(mqtt_msg.payload)
-        client.publish("ledslie/logs/sequencer", "Incoming %s" % seq_id)
-        for image, image_info in sequence:
-            if len(image) != self.config.get('DISPLAY_WIDTH') * self.config.get('DISPLAY_HEIGHT'):
-                return
-            try:
-                image_duration = image_info[b'duration']
-            except KeyError:
-                return
-            self.queue.append([image_duration, image])
-        client.publish("ledslie/logs/sequencer", "Send %s" % seq_id)
+        seq = ImageSequence(self.config).load(mqtt_msg.payload)
+        client.publish("ledslie/logs/sequencer", "Incoming %s" % seq.id)
+        self.queue.extend(seq)
         if queue_started_empty and self.queue:
             self.schedule_image(client)
 
     def send_image(self, client, image):
-        client.publish("ledslie/frames/1", image)
-        crc32(image)
-        client.publish("ledslie/logs/sequencer", "Published image %s" % crc32(image))
+        client.publish("ledslie/frames/1", bytes(image))
+        client.publish("ledslie/logs/sequencer", "Published image %s" % crc32(bytes(image)))
 
     def schedule_image(self, client):
-        image_duration, image = self.queue.popleft()
+        image = self.queue.popleft()
         self.send_image(client, image)
         if self.queue:  # there's still work in the queue
             client.publish("ledslie/logs/sequencer", "Scheduling next image for %dms. %d images in queue" %
-                           (image_duration, len(self.queue)))
-            self.timer = Timer(image_duration/1000.0, self.schedule_image, [client]).start()
+                           (image.duration, len(self.queue)))
+            self.timer = Timer(image.duration/1000.0, self.schedule_image, [client]).start()
         else:
             client.publish("ledslie/logs/sequencer", "Image Queue empty")
 

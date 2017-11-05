@@ -1,5 +1,5 @@
-import msgpack
 import pytest
+import msgpack
 from flask.config import Config
 from paho.mqtt.client import MQTTMessage
 
