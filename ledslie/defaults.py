@@ -7,5 +7,11 @@ MQTT_KEEPALIVE = 60  # set the time interval for sending a ping to the broker to
 # app.config['MQTT_PASSWORD'] = ''  # set the password here if the broker demands authentication
 # app.config['MQTT_TLS_ENABLED'] = False  # set TLS to disabled for testing purposes
 
+FONT_DIRECTORY = '../../resources/fonts/'
+
 SERIAL_BAUDRATE = 115200
 SERIAL_PORT = '/dev/ttyUSB0'  # set to "fake" to run without serial port.
+
+DISPLAY_WIDTH = 144
+DISPLAY_HEIGHT = 24
+DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds

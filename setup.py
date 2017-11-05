@@ -13,8 +13,7 @@ setup(
     install_requires=[str(requirement.req) for requirement in requirements],
     package_data = {
         'ledslie': [
-            'templates/*',
-            'static/*',
+            'interface/templates/*',
             # 'defaults.conf',
         ],
         'processors': [

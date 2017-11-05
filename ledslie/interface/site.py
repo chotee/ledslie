@@ -13,9 +13,6 @@ from flask_mqtt import Mqtt
 app = Flask(__name__)
 mqtt = Mqtt()
 
-DISPLAY_WIDTH = 144  # Width of the display
-DISPLAY_HEIGHT = 24  # Height of the display
-DEFAULT_DELAY  = 5000
 
 @app.route('/')
 def index():
@@ -74,14 +71,14 @@ def text3():
 
 def process_frame(frame_raw):
     frame = frame_raw.copy()
-    if (DISPLAY_WIDTH, DISPLAY_HEIGHT) != frame.size:
-        frame = frame.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    if (app.config.get("DISPLAY_WIDTH"), app.config.get("DISPLAY_HEIGHT")) != frame.size:
+        frame = frame.resize((app.config.get("DISPLAY_WIDTH"), app.config.get("DISPLAY_HEIGHT")))
     frame_image = frame.convert("L")
     frame_info = {
         # 'id': generate_id(),
         # 'width_orig': frame_raw.width,
         # 'height_orig': frame_raw.height,
-        'duration': frame.info.get('duration', DEFAULT_DELAY),
+        'duration': frame.info.get('duration', app.config.get("DISPLAY_DEFAULT_DELAY")),
         # 'image_crc': crc32(frame_image.tobytes())
         # 'data': repr([d for d in frame.tobytes()]),
     }
@@ -100,6 +97,10 @@ def make_app():
     return app
 
 
-if __name__ == '__main__':
+def main():
     site_app = make_app()
     site_app.run()
+
+
+if __name__ == '__main__':
+    main()

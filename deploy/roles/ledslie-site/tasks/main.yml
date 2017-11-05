@@ -1,7 +1,9 @@
 - name: Copy the files to the machine.
   synchronize:
-    src: ../ledslie
+    src: "../../../../"
     dest: "/home/{{ ansible_user }}/src/"
+  tags:
+    - update
 
 - name: Install system dependencies
   apt:
@@ -19,13 +21,15 @@
 
 - name: Install ledslie dependencies
   pip:
-    requirements: "/home/{{ ansible_user }}/src/ledslie/requirements.txt"
+    requirements: "/home/{{ ansible_user }}/src/requirements.txt"
     virtualenv: "/home/{{ ansible_user }}/pyenv"
 
 - name: Install the Ledslie software.
   command: "/home/{{ ansible_user }}/pyenv/bin/python setup.py install"
   args:
-    chdir: "/home/{{ ansible_user }}/src/ledslie"
+    chdir: "/home/{{ ansible_user }}/src/"
+  tags:
+    - update
 
 - name: Forcing a flup package to install again
   pip:
@@ -47,6 +51,8 @@
     src: defaults-ledslie
     dest: /etc/default/ledslie
   become: yes
+  tags:
+    - update
 
 - name: Installing systemd templates
   template:
@@ -60,6 +66,8 @@
     state: restarted
     enabled: yes
   become: yes
+  tags:
+    - update
 
 - name: Copy nginx configuration
   template:

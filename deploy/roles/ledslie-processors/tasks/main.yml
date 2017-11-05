@@ -19,3 +19,5 @@
     - ledslie-serializer
     - ledslie-typesetter
   become: yes
+  tags:
+    - update

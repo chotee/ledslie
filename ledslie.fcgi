@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from flup.server.fcgi import WSGIServer
-from ledslie.site import make_app
+from ledslie.interface.site import make_app
 
 if __name__ == '__main__':
     site_app = make_app()

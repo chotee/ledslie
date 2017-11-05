@@ -14,7 +14,8 @@ from flask.config import Config
 import paho.mqtt.client as mqtt
 import msgpack
 
-CURDIR = os.path.split(__file__)[0]
+SCRIPT_DIR = os.path.split(__file__)[0]
+os.chdir(SCRIPT_DIR)
 
 config = Config(".")
 
@@ -32,9 +33,11 @@ def generate_id():
 
 
 def typeset_1line(msg):
-    image = Image.new("L", (144, 24))
+    image = Image.new("L", (config.get("DISPLAY_WIDTH"),
+                            config.get("DISPLAY_HEIGHT")))
     draw = ImageDraw.Draw(image)
-    font_path = os.path.realpath(os.path.join(CURDIR, "..", "resources", "DroidSansMono.ttf"))
+    fontFileName = "DroidSansMono.ttf"
+    font_path = _get_font_filepath(fontFileName)
     try:
         font = ImageFont.truetype(font_path, 20)
     except OSError as exc:
@@ -47,7 +50,8 @@ def typeset_1line(msg):
 def typeset_3lines(lines):
     image = Image.new("L", (144, 24))
     draw = ImageDraw.Draw(image)
-    font_path = os.path.realpath(os.path.join(CURDIR, "fonts", "DroidSansMono.ttf"))
+    fontFileName = "DroidSansMono.ttf"
+    font_path = _get_font_filepath(fontFileName)
     try:
         font = ImageFont.truetype(font_path, 9)
     except OSError as exc:
@@ -56,6 +60,10 @@ def typeset_3lines(lines):
     for i, msg in enumerate(lines):
         draw.text((0, (i*8)-2), msg, (255), font=font)
     return image
+
+
+def _get_font_filepath(fontFileName):
+    return os.path.realpath(os.path.join(config.get("FONT_DIRECTORY"), fontFileName))
 
 
 def send_image(client, image_id, image_data):

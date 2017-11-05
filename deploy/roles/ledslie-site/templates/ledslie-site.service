@@ -5,7 +5,7 @@ After=network.target
 [Service]
 EnvironmentFile=-/etc/default/ledslie
 User=www-data
-ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/ledslie.fcgi
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie.fcgi
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
 #Restart=on-failure
