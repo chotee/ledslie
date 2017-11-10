@@ -1,15 +1,14 @@
 [Unit]
 Description=Ledslie typesetter
-After=network.target mosquitto.service
+After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
 User={{ ansible_user }}
-ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/va{{ ansible_user }}grant/src/ledslie/processors/typesetter.py
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/typesetter.py
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
 #Restart=on-failure
 
 [Install]
-#WantedBy=multi-user.target
-
+WantedBy=multi-user.target

@@ -10,7 +10,7 @@ MQTT_KEEPALIVE = 60  # set the time interval for sending a ping to the broker to
 FONT_DIRECTORY = '../../resources/fonts/'
 
 SERIAL_BAUDRATE = 115200
-SERIAL_PORT = '/dev/ttyUSB0'  # set to "fake" to run without serial port.
+SERIAL_PORT = '/dev/ttyACM0'  # set to "fake" to run without serial port.
 
 DISPLAY_WIDTH = 144
 DISPLAY_HEIGHT = 24

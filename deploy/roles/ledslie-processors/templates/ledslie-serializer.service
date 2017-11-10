@@ -1,6 +1,6 @@
 [Unit]
 Description=Ledslie serializer
-After=network.target mosquitto.service
+After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
@@ -11,5 +11,5 @@ ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src
 #Restart=on-failure
 
 [Install]
-#WantedBy=multi-user.target
+WantedBy=multi-user.target
 

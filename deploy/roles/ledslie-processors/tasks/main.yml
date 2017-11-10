@@ -8,6 +8,7 @@
     - ledslie-typesetter
   become: yes
 
+# stty -F /dev/ttyACM0 raw
 
 - name: Start ledslie processer services
   systemd:

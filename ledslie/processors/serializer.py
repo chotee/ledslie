@@ -26,6 +26,7 @@ def connect_serial():
     if config.get('SERIAL_PORT') != "fake":
         try:
             serial_port = serial.Serial(config.get('SERIAL_PORT'), baudrate=config.get('SERIAL_BAUDRATE'))
+            print("Serial port SUCCESS: %s at %s" % (config.get('SERIAL_PORT'), config.get('SERIAL_BAUDRATE')))
         except serial.serialutil.SerialException as exc:
             print("Serial port failure: %s", exc)
             serial_port = FakeSerial()
