@@ -15,6 +15,17 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+===========
+
+I take a message with text data and generate a frame representing that data.
+
+TOPIC: ledslie.definitions.LEDSLIE_TOPIC_TYPESETTER:
+MESSAGE STRUCTURE: MessagePack message.
+  type = "1line" and content is on "text" variable.
+OR
+  type = "3lines" and content is in "lines" variable.
+
 """
 
 # Start without arguments it's the typesetter
@@ -94,8 +105,10 @@ def send_image(client, image_id, image_data):
 
 
 def on_message(client, userdata, mqtt_msg):
+    client.publish("ledslie/logs/typesetter", "Got message: '%s'" % mqtt_msg.payload)
     data = msgpack.unpackb(mqtt_msg.payload)
     text_type = data[b'type']
+    image_bytes = None
     if text_type == b'1line':
         msg = data[b'text'].decode('UTF-8')
         client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)

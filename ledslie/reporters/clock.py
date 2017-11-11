@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 
 from twisted.internet import reactor, task
 from twisted.internet.defer import inlineCallbacks, DeferredList
@@ -9,6 +10,7 @@ from twisted.logger import (
     FilteringLogObserver, LogLevelFilterPredicate)
 
 from flask.config import Config
+import msgpack
 
 from mqtt.client.factory import MQTTFactory
 
@@ -17,6 +19,8 @@ from mqtt.client.factory import MQTTFactory
 # ----------------
 
 # Global object to control globally namespace logging
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_SERIALIZER
+
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
 
@@ -56,9 +60,10 @@ def setLogLevel(namespace=None, levelStr='info'):
 # -----------------------
 
 class MQTTService(ClientService):
-    # def __init(self, endpoint, factory):
-    #     assert 1==2
-    #     ClientService.__init__(self, endpoint, factory, retryPolicy=backoffPolicy())
+    def __init__(self, endpoint, factory, config):
+        super().__init__(endpoint, factory)
+        self.config = config
+        self.count = 0
 
     def startService(self):
         log.info("starting MQTT Client Publisher Service")
@@ -78,7 +83,7 @@ class MQTTService(ClientService):
         # Publish requests beyond window size are enqueued
         self.protocol.setWindowSize(3)
         self.task = task.LoopingCall(self.publish)
-        self.task.start(5.0, now=False)
+        self.task.start(1, now=False)
         try:
             yield self.protocol.connect("TwistedMQTT-pub", keepalive=60)
         except Exception as e:
@@ -96,7 +101,7 @@ class MQTTService(ClientService):
         self.whenConnected().addCallback(self.connectToBroker)
 
     def publish(self):
-
+        display_size = config['DISPLAY_SIZE']
         def _logFailure(failure):
             log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
@@ -105,15 +110,12 @@ class MQTTService(ClientService):
             log.debug("all publihing complete args={args!r}", args=args)
 
         log.debug(" >< Starting one round of publishing >< ")
-        d1 = self.protocol.publish(topic="foo/bar/baz1", qos=0, message="hello world 0")
-        d1.addErrback(_logFailure)
-        d2 = self.protocol.publish(topic="foo/bar/baz2", qos=1, message="hello world 1")
-        d2.addErrback(_logFailure)
-        d3 = self.protocol.publish(topic="foo/bar/baz3", qos=2, message="hello world 2")
-        d3.addErrback(_logFailure)
-        dlist = DeferredList([d1, d2, d3], consumeErrors=True)
-        dlist.addCallback(_logAll)
-        return dlist
+        date_str = str(datetime.now().strftime("%a %H:%M:%S"))
+        msg = msgpack.packb({b"type": b'1line', b'text': date_str})
+        # d = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, qos=1, message='\xff'*self.config.get("DISPLAY_SIZE"))
+        d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER, qos=1, message=bytearray(msg))
+        # d.addErrback(_logFailure)
+        return d
 
 
 if __name__ == '__main__':
@@ -129,6 +131,6 @@ if __name__ == '__main__':
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
     endpoint_url = 'tcp:%s:%s' % (config.get('MQTT_BROKER_URL'), config.get('MQTT_BROKER_PORT'))
     myEndpoint = clientFromString(reactor, endpoint_url)
-    serv = MQTTService(myEndpoint, factory)
+    serv = MQTTService(myEndpoint, factory, config)
     serv.startService()
     reactor.run()
