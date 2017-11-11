@@ -80,8 +80,8 @@ def prepare_image(image_data):
 def on_message(client, userdata, mqtt_msg):
     image = mqtt_msg.payload
     data = prepare_image(image)
-    if len(data) != config.get("DISPLAY_SIZE"):
-        client.publish("ledslie/logs/serializer", "WRONG message size. Expected: %d but got %d." % (
+    if int(len(image)) != int(config.get("DISPLAY_SIZE")):
+        client.publish("ledslie/logs/serializer", "WRONG message size. Expected %d but got %d." % (
             len(image), config.get("DISPLAY_SIZE")))
         return
     send_serial(data)

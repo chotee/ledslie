@@ -6,6 +6,7 @@
     - ledslie-sequencer
     - ledslie-serializer
     - ledslie-typesetter
+    - ledslie-clock
   become: yes
 
 - name: Start ledslie processer services
@@ -17,6 +18,7 @@
     - ledslie-sequencer
     - ledslie-serializer
     - ledslie-typesetter
+    - ledslie-clock
   become: yes
   tags:
     - update
