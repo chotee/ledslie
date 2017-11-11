@@ -22,7 +22,7 @@ import serial
 import paho.mqtt.client as mqtt
 from flask.config import Config
 
-fake = True
+from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 
 config = Config(".")
 
@@ -31,7 +31,7 @@ serial_port = None
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("ledslie/frames/1")
+    client.subscribe(LEDSLIE_TOPIC_SERIALIZER)
 
 
 class FakeSerial(object):
