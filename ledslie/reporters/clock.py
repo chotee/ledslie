@@ -8,6 +8,8 @@ from twisted.logger import (
     Logger, LogLevel, globalLogBeginner, textFileLogObserver,
     FilteringLogObserver, LogLevelFilterPredicate)
 
+from flask.config import Config
+
 from mqtt.client.factory import MQTTFactory
 
 # ----------------
@@ -16,8 +18,6 @@ from mqtt.client.factory import MQTTFactory
 
 # Global object to control globally namespace logging
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
-
-BROKER = "tcp:localhost:1883"
 
 
 # -----------------
@@ -56,8 +56,9 @@ def setLogLevel(namespace=None, levelStr='info'):
 # -----------------------
 
 class MQTTService(ClientService):
-    def __init(self, endpoint, factory):
-        ClientService.__init__(self, endpoint, factory, retryPolicy=backoffPolicy())
+    # def __init(self, endpoint, factory):
+    #     assert 1==2
+    #     ClientService.__init__(self, endpoint, factory, retryPolicy=backoffPolicy())
 
     def startService(self):
         log.info("starting MQTT Client Publisher Service")
@@ -82,9 +83,9 @@ class MQTTService(ClientService):
             yield self.protocol.connect("TwistedMQTT-pub", keepalive=60)
         except Exception as e:
             log.error("Connecting to {broker} raised {excp!s}",
-                      broker=BROKER, excp=e)
+                      broker=self._machine._endpoint, excp=e)
         else:
-            log.info("Connected to {broker}", broker=BROKER)
+            log.info("Connected to {broker}", broker=self._machine._endpoint)
 
     def onDisconnection(self, reason):
         '''
@@ -116,7 +117,9 @@ class MQTTService(ClientService):
 
 
 if __name__ == '__main__':
-    import sys
+    config = Config('.')
+    config.from_object('ledslie.defaults')
+    config.from_envvar('LEDSLIE_CONFIG')
 
     log = Logger()
     startLogging()
@@ -124,7 +127,8 @@ if __name__ == '__main__':
     setLogLevel(namespace='__main__', levelStr='debug')
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
-    myEndpoint = clientFromString(reactor, BROKER)
+    endpoint_url = 'tcp:%s:%s' % (config.get('MQTT_BROKER_URL'), config.get('MQTT_BROKER_PORT'))
+    myEndpoint = clientFromString(reactor, endpoint_url)
     serv = MQTTService(myEndpoint, factory)
     serv.startService()
     reactor.run()
