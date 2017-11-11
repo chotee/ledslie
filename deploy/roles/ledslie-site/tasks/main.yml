@@ -37,15 +37,6 @@
     state: forcereinstall
     virtualenv: "/home/{{ ansible_user }}/pyenv"
 
-- name: Create /var/run/ledslie directory
-  file:
-    path: /var/run/ledslie
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: www-data
-    mode: 0771
-  become: yes
-
 - name: Installing /etc/default/ledslie
   template:
     src: defaults-ledslie
