@@ -19,4 +19,5 @@ SERIAL_PORT = '/dev/ttyACM0'  # set to "fake" to run without serial port.
 
 DISPLAY_WIDTH = 144
 DISPLAY_HEIGHT = 24
+DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
