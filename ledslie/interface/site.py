@@ -27,6 +27,7 @@ from werkzeug.exceptions import UnsupportedMediaType
 from flask import Flask, render_template, request, json, Response
 from flask_mqtt import Mqtt
 
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_SEQUENCES
 
 app = Flask(__name__)
 mqtt = Mqtt()
@@ -39,7 +40,7 @@ def index():
 
 def send_image(seq_id, sequence):
     data = [seq_id, sequence]
-    mqtt.publish('ledslie/sequences/1', msgpack.packb(data))
+    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES, msgpack.packb(data))
 
 
 @app.route('/gif', methods=['POST'])
@@ -70,7 +71,7 @@ def text1():
         'type': '1line',
         'text': text,
         'duration': duration}
-    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER, msgpack.packb(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 
@@ -83,7 +84,7 @@ def text3():
         'lines': lines,
         'duration': duration
     }
-    mqtt.publish('ledslie/typesetter/1', msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER, msgpack.packb(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 

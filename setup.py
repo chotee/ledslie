@@ -19,5 +19,6 @@ setup(
         'processors': [
             'resources'
         ],
+        'reporters': [],
     },
 )

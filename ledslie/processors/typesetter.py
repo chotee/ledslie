@@ -15,6 +15,17 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+===========
+
+I take a message with text data and generate a frame representing that data.
+
+TOPIC: ledslie.definitions.LEDSLIE_TOPIC_TYPESETTER:
+MESSAGE STRUCTURE: MessagePack message.
+  type = "1line" and content is on "text" variable.
+OR
+  type = "3lines" and content is in "lines" variable.
+
 """
 
 # Start without arguments it's the typesetter
@@ -31,6 +42,8 @@ from flask.config import Config
 import paho.mqtt.client as mqtt
 import msgpack
 
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER
+
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
 
@@ -42,7 +55,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("ledslie/typesetter/1")
+    client.subscribe(LEDSLIE_TOPIC_TYPESETTER)
 
 
 def generate_id():
@@ -88,12 +101,14 @@ def send_image(client, image_id, image_data):
     # print("Sending the image data:")
     # pprint(data_objs)
     data = msgpack.packb(data_objs)
-    client.publish("ledslie/sequences/1", data)
+    client.publish(LEDSLIE_TOPIC_SEQUENCES, data)
 
 
 def on_message(client, userdata, mqtt_msg):
+    client.publish("ledslie/logs/typesetter", "Got message: '%s'" % mqtt_msg.payload)
     data = msgpack.unpackb(mqtt_msg.payload)
     text_type = data[b'type']
+    image_bytes = None
     if text_type == b'1line':
         msg = data[b'text'].decode('UTF-8')
         client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)

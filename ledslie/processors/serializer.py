@@ -14,6 +14,16 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+===========
+
+I send incoming raw frames messages to the connected serial output.
+
+TOPIC: ledslie.definitions.LEDSLIE_TOPIC_SERIALIZER:
+MESSAGE STRUCTURE: Bytes of the frame to display. One byte per pixel. Pixel 0 is top-left, going right and down.
+Value 0 is off, 255 is full brightness. Sending more or less then config.get("DISPLAY_SIZE") pixels will make the
+serializer ignore the message.
+
 """
 
 from zlib import crc32
@@ -22,7 +32,7 @@ import serial
 import paho.mqtt.client as mqtt
 from flask.config import Config
 
-fake = True
+from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 
 config = Config(".")
 
@@ -31,7 +41,7 @@ serial_port = None
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("ledslie/frames/1")
+    client.subscribe(LEDSLIE_TOPIC_SERIALIZER)
 
 
 class FakeSerial(object):
@@ -70,6 +80,10 @@ def prepare_image(image_data):
 def on_message(client, userdata, mqtt_msg):
     image = mqtt_msg.payload
     data = prepare_image(image)
+    if int(len(image)) != int(config.get("DISPLAY_SIZE")):
+        client.publish("ledslie/logs/serializer", "WRONG message size. Expected %d but got %d." % (
+            len(image), config.get("DISPLAY_SIZE")))
+        return
     send_serial(data)
     client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
         crc32(image), len(image)))

@@ -3,6 +3,7 @@ import msgpack
 from flask.config import Config
 from paho.mqtt.client import MQTTMessage
 
+from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 from ledslie.processors.sequencer import Sequencer
 
 class FakeClient(object):
@@ -80,11 +81,11 @@ class TestSequencer(object):
         seq.on_message(client, userdata, mqtt_msg)
         seq.schedule_image(client)
         seq.schedule_image(client)
-        assert len(client.assert_message_pubed('ledslie/frames/1')) == 3
-        assert client.assert_message_pubed('ledslie/frames/1') == [
-            ['ledslie/frames/1', b'0'*image_size],
-            ['ledslie/frames/1', b'1'*image_size],
-            ['ledslie/frames/1', b'2'*image_size],
+        assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 3
+        assert client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER) == [
+            [LEDSLIE_TOPIC_SERIALIZER, b'0'*image_size],
+            [LEDSLIE_TOPIC_SERIALIZER, b'1'*image_size],
+            [LEDSLIE_TOPIC_SERIALIZER, b'2'*image_size],
         ]
 
     def test_sequence_wrong(self, monkeypatch, seq, client):
@@ -98,13 +99,13 @@ class TestSequencer(object):
         seq_id = 666
         mqtt_msg.payload = msgpack.packb([seq_id, sequence])
         seq.on_message(client, userdata, mqtt_msg)
-        assert len(client.assert_message_pubed('ledslie/frames/1')) == 0
+        assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 0
 
         sequence = [
             ['0'*image_size, {}],  # No duration information
         ]
         mqtt_msg.payload = msgpack.packb([seq_id, sequence])
         seq.on_message(client, userdata, mqtt_msg)
-        assert len(client.assert_message_pubed('ledslie/frames/1')) == 0
+        assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 0
         assert len(seq.queue) == 0
 

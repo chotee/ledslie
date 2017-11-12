@@ -26,6 +26,9 @@ from threading import Timer
 
 from flask.config import Config
 
+from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SEQUENCES
+
+
 class GenericProcessor(object):
     pass
 
@@ -73,7 +76,7 @@ class Sequencer(GenericProcessor):
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe("ledslie/sequences/1")
+        client.subscribe(LEDSLIE_TOPIC_SEQUENCES)
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, mqtt_msg):
@@ -85,7 +88,7 @@ class Sequencer(GenericProcessor):
             self.schedule_image(client)
 
     def send_image(self, client, image):
-        client.publish("ledslie/frames/1", bytes(image))
+        client.publish(LEDSLIE_TOPIC_SERIALIZER, bytes(image))
         client.publish("ledslie/logs/sequencer", "Published image %s" % crc32(bytes(image)))
 
     def schedule_image(self, client):

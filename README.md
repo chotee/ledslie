@@ -16,10 +16,13 @@ It consists of various processes that do one particular job.
 * [Serializer](ledslie/processors/serializer.py) receives raw frame-types and sends them to the display.
 * [Sequencer](ledslie/processors/sequencer.py) maintains a queue of frames and sends the next to Serializer.
 * [Typesetter](ledslie/processors/typesetter.py) takes a text and generates the frame to be displayed. 
+
+Ledslie has various dependencies on other projects.
 * [Mosquitto](http://mosquitto.org/) is the MQTT broker. 
+* [MessagePack](https://msgpack.org/) provides the message serialization. 
 * [Nginx](http://nginx.org/) does the webserver work.
 * [Ansible](https://www.ansible.com/) does the Deployment from the [deploy](deploy/) directory. 
-
+* [Pillow](https://python-pillow.org/) is used for image processing.
 
 ## Deploying
 To test, use [vagrant](https://www.vagrantup.com/) to run a VM that has all the system running (except, likely, the display)
