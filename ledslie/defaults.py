@@ -7,6 +7,7 @@ any configuration values that are not defined here, making this the list of all 
 DEBUG=False
 MQTT_BROKER_URL = 'localhost'  # use the free broker from HIVEMQ
 MQTT_BROKER_PORT = 1883  # default port for non-tls connection
+MQTT_BROKER_CONN_STRING = 'tcp:%s:%s' % (MQTT_BROKER_URL, MQTT_BROKER_PORT)
 MQTT_KEEPALIVE = 60  # set the time interval for sending a ping to the broker to 5 seconds
 # app.config['MQTT_USERNAME'] = ''  # set the username here if you need authentication for the broker
 # app.config['MQTT_PASSWORD'] = ''  # set the password here if the broker demands authentication

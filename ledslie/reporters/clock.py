@@ -88,9 +88,9 @@ class MQTTService(ClientService):
             yield self.protocol.connect("TwistedMQTT-pub", keepalive=60)
         except Exception as e:
             log.error("Connecting to {broker} raised {excp!s}",
-                      broker=self._machine._endpoint, excp=e)
+                      broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
         else:
-            log.info("Connected to {broker}", broker=self._machine._endpoint)
+            log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
 
     def onDisconnection(self, reason):
         '''
@@ -129,8 +129,7 @@ if __name__ == '__main__':
     setLogLevel(namespace='__main__', levelStr='debug')
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
-    endpoint_url = 'tcp:%s:%s' % (config.get('MQTT_BROKER_URL'), config.get('MQTT_BROKER_PORT'))
-    myEndpoint = clientFromString(reactor, endpoint_url)
+    myEndpoint = clientFromString(reactor, config.get('MQTT_BROKER_CONN_STRING'))
     serv = MQTTService(myEndpoint, factory, config)
     serv.startService()
     reactor.run()
