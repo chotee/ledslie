@@ -42,7 +42,8 @@ from flask.config import Config
 import paho.mqtt.client as mqtt
 import msgpack
 
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER
+from ledslie.defaults import DISPLAY_DEFAULT_DELAY
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT
 
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
@@ -56,6 +57,7 @@ def on_connect(client, userdata, flags, rc):
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     client.subscribe(LEDSLIE_TOPIC_TYPESETTER)
+    client.subscribe(LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT)
 
 
 def generate_id():
@@ -93,7 +95,7 @@ def typeset_3lines(lines):
 
 
 def _get_font_filepath(fontFileName):
-    return os.path.realpath(os.path.join(config.get("FONT_DIRECTORY"), fontFileName))
+    return os.path.realpath(os.path.join(config["FONT_DIRECTORY"], fontFileName))
 
 
 def send_image(client, image_id, image_data):
@@ -105,23 +107,28 @@ def send_image(client, image_id, image_data):
 
 
 def on_message(client, userdata, mqtt_msg):
-    client.publish("ledslie/logs/typesetter", "Got message: '%s'" % mqtt_msg.payload)
-    data = msgpack.unpackb(mqtt_msg.payload)
-    text_type = data[b'type']
-    image_bytes = None
-    if text_type == b'1line':
-        msg = data[b'text'].decode('UTF-8')
-        client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)
-        # pprint(data)
-        image_bytes = typeset_1line(msg).tobytes()
-    elif text_type == b'3lines':
-        lines = [l.decode('UTF-8') for l in data[b'lines']]
-        image_bytes = typeset_3lines(lines).tobytes()
+    client.publish("ledslie/logs/typesetter", "On %s Got message: '%s'" % (mqtt_msg.topic, mqtt_msg.payload))
+    if mqtt_msg.topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
+        duration = DISPLAY_DEFAULT_DELAY
+        image_bytes = typeset_1line(mqtt_msg.payload[:30]).tobytes()
     else:
-        print("Unknown type %s" % text_type)
-    if image_bytes is None:
-        return
-    send_image(client, generate_id(), [[image_bytes, {'duration': data.get('duration', 5000)}],])
+        data = msgpack.unpackb(mqtt_msg.payload)
+        duration = data.get('duration', 5000)
+        text_type = data[b'type']
+        image_bytes = None
+        if text_type == b'1line':
+            msg = data[b'text'].decode('UTF-8')
+            client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)
+            # pprint(data)
+            image_bytes = typeset_1line(msg).tobytes()
+        elif text_type == b'3lines':
+            lines = [l.decode('UTF-8') for l in data[b'lines']]
+            image_bytes = typeset_3lines(lines).tobytes()
+        else:
+            print("Unknown type %s" % text_type)
+        if image_bytes is None:
+            return
+    send_image(client, generate_id(), [[image_bytes, {'duration': duration}]])
 
 
 def main():

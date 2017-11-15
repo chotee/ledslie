@@ -1,45 +1,14 @@
-import pytest
 import msgpack
+import pytest
 from flask.config import Config
 from paho.mqtt.client import MQTTMessage
 
 from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 from ledslie.processors.sequencer import Sequencer
-
-class FakeClient(object):
-    def __init__(self):
-        self.pubed_messages = []
-
-    def connect(self, host, port, keepalive):
-        pass
-
-    def subscribe(self, topic):
-        pass
-
-    def publish(self, topic, data):
-        self.pubed_messages.append([topic, data])
-
-    def loop_forever(self):
-        pass
-
-    def assert_message_pubed(self, topic):
-        return [msg for msg in self.pubed_messages if msg[0].startswith(topic)]
-
-
-class FakeTimer(object):
-    def __init__(self, delay, func, *args, **kwargs):
-        pass
-
-    def start(self):
-        pass
+from ledslie.tests.fakes import FakeClient, FakeTimer
 
 
 class TestSequencer(object):
-
-    @pytest.fixture
-    def client(self):
-        return FakeClient()
-
     @pytest.fixture
     def seq(self, client):
         self.config = Config('.')
