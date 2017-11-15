@@ -73,6 +73,12 @@
     src: /etc/nginx/sites-available/ledslie.conf
   become: yes
 
+- name: Removing nginx default site
+  file:
+    state: absent
+    path: /etc/nginx/sites-enabled/default
+  become: yes
+
 - name: Restart nginx.
   systemd:
     name: nginx
