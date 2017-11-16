@@ -58,7 +58,8 @@ class FakeMqttProtocol(FakeProtocol):
 
 class FakeLogger(object):
     def error(self, msg, **kwargs):
-        raise RuntimeError(msg.format(**kwargs))
+        pass
+        #raise RuntimeError(msg.format(**kwargs))
 
     def info(self, msg, **kwargs):
         pass
@@ -90,12 +91,8 @@ class TestScheduler(object):
     def test_on_message(self, sched):
         topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
         payload = self._test_sequence(sched)
-        qos = 0
-        dup = False
-        retain = False
-        msgId = 0
         assert sched.catalog.is_empty()
-        sched.onPublish(topic, payload, qos, dup, retain, msgId)
+        sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert not sched.catalog.is_empty()
 
     def _test_sequence(self, sched):
@@ -131,46 +128,21 @@ class TestScheduler(object):
         sched.send_next_frame()  # End of program!  # this should not happen.
         assert 3 == len(sched.protocol._published_messages)
 
+    def test_sequence_wrong(self, sched):
+        image_size = sched.config.get('DISPLAY_SIZE')
+        topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
+        sequence = [
+            ['666', {'duration': 100}],  # Wrong number of bytes in the image
+        ]
+        payload = msgpack.packb([0, sequence])
+        assert sched.catalog.is_empty()
+        sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
+        assert sched.catalog.is_empty()
 
-    # def test_sequence(self, monkeypatch, seq, client):
-    #     monkeypatch.setattr("ledslie.processors.sequencer.Timer", FakeTimer)
-    #     userdata = None
-    #     mqtt_msg = MQTTMessage()
-    #     seq_id = 666
-    #     sequence = [
-    #         ['0'*image_size, {'duration': 100}],
-    #         ['1'*image_size, {'duration': 100}],
-    #         ['2'*image_size, {'duration': 100}],
-    #     ]
-    #     mqtt_msg.payload = msgpack.packb([seq_id, sequence])
-    #     seq.on_message(client, userdata, mqtt_msg)
-    #     seq.schedule_image(client)
-    #     seq.schedule_image(client)
-    #     assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 3
-    #     assert client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER) == [
-    #         [LEDSLIE_TOPIC_SERIALIZER, b'0'*image_size],
-    #         [LEDSLIE_TOPIC_SERIALIZER, b'1'*image_size],
-    #         [LEDSLIE_TOPIC_SERIALIZER, b'2'*image_size],
-    #     ]
-    #
-    # def test_sequence_wrong(self, monkeypatch, seq, client):
-    #     monkeypatch.setattr("ledslie.processors.sequencer.Timer", FakeTimer)
-    #     image_size = seq.config.get('DISPLAY_WIDTH') * seq.config.get('DISPLAY_HEIGHT')
-    #     sequence = [
-    #         ['666', {'duration': 100}],  # Wrong number of bytes in the image
-    #     ]
-    #     userdata = None
-    #     mqtt_msg = MQTTMessage()
-    #     seq_id = 666
-    #     mqtt_msg.payload = msgpack.packb([seq_id, sequence])
-    #     seq.on_message(client, userdata, mqtt_msg)
-    #     assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 0
-    #
-    #     sequence = [
-    #         ['0'*image_size, {}],  # No duration information
-    #     ]
-    #     mqtt_msg.payload = msgpack.packb([seq_id, sequence])
-    #     seq.on_message(client, userdata, mqtt_msg)
-    #     assert len(client.assert_message_pubed(LEDSLIE_TOPIC_SERIALIZER)) == 0
-    #     assert len(seq.queue) == 0
-
+        sequence = [
+            ['0'*image_size, {}],  # No duration information, will default to the standard one.
+        ]
+        payload = msgpack.packb([0, sequence])
+        assert sched.catalog.is_empty()
+        sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
+        assert sched.catalog.has_content()

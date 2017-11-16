@@ -191,6 +191,8 @@ class Scheduler(ClientService):
         log.debug("onPublish topic={topic}, msg={payload}", payload=payload, topic=topic)
         program_id = self.get_program_id(topic)
         seq = ImageSequence(self.config).load(payload)
+        if seq is None:
+            return
         self.catalog.add_sequence(program_id, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
@@ -245,7 +247,7 @@ class ImageSequence(object):
                 log.error("Images are of the wrong size. Ignoring.")
                 return
             try:
-                image_duration = image_info[b'duration']
+                image_duration = image_info.get(b'duration', self.config['DISPLAY_DEFAULT_DELAY'])
             except KeyError:
                 break
             self.sequence.append(Image(image_data, duration=image_duration))
