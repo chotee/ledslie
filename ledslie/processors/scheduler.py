@@ -92,6 +92,7 @@ def setLogLevel(namespace=None, levelStr='info'):
 class Catalog(object):
     def __init__(self):
         self.sequences = {}
+        self.active_program = None
 
     def has_content(self):
         return bool(self.sequences)
@@ -99,8 +100,22 @@ class Catalog(object):
     def is_empty(self):
         return not self.has_content()
 
-    def select_active(self):
-        return self.sequences[None]
+    def select_active_program(self):
+        self.active_program = self.sequences[None]
+
+    def remove_program(self, program):
+        del self.sequences[None]
+
+    def next_frame(self):
+        if self.active_program is None:
+            self.select_active_program()
+        try:
+            return self.active_program.next_frame()
+        except IndexError:
+            self.remove_program(self.active_program)
+            self.active_program = None
+            self.select_active_program()
+            self.next_frame()
 
     def add_sequence(self, program_id, seq):
         self.sequences[program_id] = seq
@@ -187,8 +202,10 @@ class Scheduler(ClientService):
         return program_id
 
     def send_next_frame(self):
-        program = self.catalog.select_active()
-        frame = program.next_frame()
+        try:
+            frame = self.catalog.next_frame()
+        except KeyError:
+            return
         self.publish_frame(frame)
         self.sequencer = self.reactor.callLater(frame.duration, self.send_next_frame)
 
@@ -196,8 +213,6 @@ class Scheduler(ClientService):
         d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))
         d1.addErrback(self._logPublishFailure)
         return d1
-
-
 
     def onDisconnection(self, reason):
         '''

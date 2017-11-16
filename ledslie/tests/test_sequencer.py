@@ -39,6 +39,9 @@ class FakeTimer(object):
 
 
 class FakeMqttProtocol(FakeProtocol):
+    def __init__(self):
+        self._published_messages = []
+
     def setWindowSize(self, size):
         pass
 
@@ -49,6 +52,7 @@ class FakeMqttProtocol(FakeProtocol):
         return succeed("subscribed to %s" % topic)
 
     def publish(self, topic, message):
+        self._published_messages.append((topic, message))
         return succeed(None)
 
 
@@ -84,7 +88,6 @@ class TestScheduler(object):
         sched.connectToBroker(protocol)
 
     def test_on_message(self, sched):
-        image_size = sched.config.get('DISPLAY_WIDTH') * sched.config.get('DISPLAY_HEIGHT')
         topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
         payload = self._test_sequence(sched)
         qos = 0
@@ -96,7 +99,7 @@ class TestScheduler(object):
         assert not sched.catalog.is_empty()
 
     def _test_sequence(self, sched):
-        image_size = sched.config.get('DISPLAY_WIDTH') * sched.config.get('DISPLAY_HEIGHT')
+        image_size = sched.config.get('DISPLAY_SIZE')
         seq_id = 666
         sequence = [
             ['0' * image_size, {'duration': 100}],
@@ -107,8 +110,27 @@ class TestScheduler(object):
         return payload
 
     def test_send_next_frame(self, sched):
+        image_size = sched.config.get('DISPLAY_SIZE')
         sched.catalog.add_sequence(None, ImageSequence(self.config).load(self._test_sequence(sched)))
-        sched.send_next_frame()
+        assert 0 == len(sched.protocol._published_messages)
+
+        sched.send_next_frame()  # Frame 0
+        assert 1 == len(sched.protocol._published_messages)
+        assert ('ledslie/frames/1', b'0' * image_size) == sched.protocol._published_messages[-1]
+
+        sched.send_next_frame()  # Frame 1
+        assert 2 == len(sched.protocol._published_messages)
+        assert ('ledslie/frames/1', b'1' * image_size) == sched.protocol._published_messages[-1]
+
+        sched.send_next_frame()  # Frame 2
+        assert 3 == len(sched.protocol._published_messages)
+        assert ('ledslie/frames/1', b'2' * image_size) == sched.protocol._published_messages[-1]
+
+        sched.send_next_frame()  # End of program!
+        assert 3 == len(sched.protocol._published_messages)
+        sched.send_next_frame()  # End of program!  # this should not happen.
+        assert 3 == len(sched.protocol._published_messages)
+
 
     # def test_sequence(self, monkeypatch, seq, client):
     #     monkeypatch.setattr("ledslie.processors.sequencer.Timer", FakeTimer)
