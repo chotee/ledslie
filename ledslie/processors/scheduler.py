@@ -28,12 +28,13 @@ An image is simply a sequence of one frame
 """
 
 import sys
+from collections import deque
 
 import msgpack
 from twisted.internet.defer       import inlineCallbacks, DeferredList
 from twisted.internet             import reactor, task
 from twisted.internet.endpoints   import clientFromString
-from twisted.application.internet import ClientService, backoffPolicy
+from twisted.application.internet import ClientService, backoffPolicy, _maybeGlobalReactor
 
 from twisted.logger   import (
     Logger, LogLevel, globalLogBeginner, textFileLogObserver,
@@ -48,7 +49,7 @@ from flask.config import Config
 # ----------------
 
 # Global object to control globally namespace logging
-from ledslie.definitions import LEDSLIE_TOPIC_STATS_BASE, LEDSLIE_TOPIC_SEQUENCES
+from ledslie.definitions import LEDSLIE_TOPIC_STATS_BASE, LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_SERIALIZER
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -88,13 +89,30 @@ def setLogLevel(namespace=None, levelStr='info'):
 # ------------------------
 
 
-class Scheduler(ClientService):
-    def __init__(self, endpoint, factory, config):
-        super().__init__(endpoint, factory, retryPolicy=backoffPolicy())
-        self.config = config
-        self.programs = {}
-        self.current_program = None
+class Catalog(object):
+    def __init__(self):
+        self.sequences = {}
 
+    def has_content(self):
+        return bool(self.sequences)
+
+    def is_empty(self):
+        return not self.has_content()
+
+    def select_active(self):
+        return self.sequences[None]
+
+    def add_sequence(self, program_id, seq):
+        self.sequences[program_id] = seq
+
+
+class Scheduler(ClientService):
+    def __init__(self, endpoint, factory, config, reactor=None):
+        super().__init__(endpoint, factory, retryPolicy=backoffPolicy(), clock=reactor)
+        self.reactor = _maybeGlobalReactor(reactor)
+        self.config = config
+        self.catalog = Catalog()
+        self.sequencer = None
 
     def startService(self):
         log.info("starting MQTT Client Subscriber Service")
@@ -110,11 +128,10 @@ class Scheduler(ClientService):
         '''
         self.protocol                 = protocol
         self.protocol.onPublish       = self.onPublish
-        self.protocol.onPublish       = self.onPublish
         self.protocol.onDisconnection = self.onDisconnection
         self.protocol.setWindowSize(3)
-        self.task = task.LoopingCall(self.publish_vital_stats)
-        self.task.start(5.0, now=False)
+        self.stats_task = task.LoopingCall(self.publish_vital_stats)
+        self.stats_task.start(5.0, now=False)
         try:
             yield self.protocol.connect("TwistedMQTT-pubsubs", keepalive=60)
             yield self.subscribe()
@@ -131,10 +148,10 @@ class Scheduler(ClientService):
     def publish_vital_stats(self):
         pass
 
-    def publish(self):
-        d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_STATS_BASE+"scheduler", message="Yea, stats")
-        d1.addErrback(self._logPublishFailure)
-        return d1
+    # def publish(self):
+    #     d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_STATS_BASE+"scheduler", message="Yea, stats")
+    #     d1.addErrback(self._logPublishFailure)
+    #     return d1
 
     def subscribe(self):
 
@@ -156,7 +173,30 @@ class Scheduler(ClientService):
         '''
         Callback Receiving messages from publisher
         '''
-        log.debug("topic={topic}, msg={payload}", payload=payload, topic=topic)
+        log.debug("onPublish topic={topic}, msg={payload}", payload=payload, topic=topic)
+        program_id = self.get_program_id(topic)
+        seq = ImageSequence(self.config).load(payload)
+        self.catalog.add_sequence(program_id, seq)
+        if self.sequencer is None:
+            self.sequencer = self.reactor.callLater(0, self.send_next_frame)
+
+    def get_program_id(self, topic):
+        program_id = None
+        # if topic != LEDSLIE_TOPIC_SEQUENCES:
+        #     program_id = topic.split('/')[-1]
+        return program_id
+
+    def send_next_frame(self):
+        program = self.catalog.select_active()
+        frame = program.next_frame()
+        self.publish_frame(frame)
+        self.sequencer = self.reactor.callLater(frame.duration, self.send_next_frame)
+
+    def publish_frame(self, frame):
+        d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))
+        d1.addErrback(self._logPublishFailure)
+        return d1
+
 
 
     def onDisconnection(self, reason):
@@ -169,10 +209,9 @@ class Scheduler(ClientService):
 
 
 class Image(object):
-    def __init__(self, img_data, **kwargs):
+    def __init__(self, img_data, duration):
         self.img_data = img_data
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+        self.duration = duration
 
     def __bytes__(self):
         return self.img_data
@@ -182,7 +221,7 @@ class ImageSequence(object):
     def __init__(self, config):
         self.config = config
         self.id = None
-        self.sequence = []
+        self.sequence = deque()
 
     def load(self, payload):
         self.id, seq = msgpack.unpackb(payload)
@@ -201,9 +240,8 @@ class ImageSequence(object):
     def duration(self):
         return sum([i.duration for i in self.sequence])
 
-    def __iter__(self):
-        return iter(self.sequence)
-
+    def next_frame(self):
+        return self.sequence.popleft()
 
 if __name__ == '__main__':
     config = Config('.')
@@ -219,76 +257,3 @@ if __name__ == '__main__':
     serv       = Scheduler(myEndpoint, factory, config)
     serv.startService()
     reactor.run()
-
-
-#
-# from zlib import crc32
-#
-# import paho.mqtt.client as mqtt
-# from collections import deque
-#
-# import msgpack
-# from threading import Timer
-#
-# from flask.config import Config
-#
-# from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SEQUENCES
-#
-#
-# class GenericProcessor(object):
-#     pass
-#
-#
-#
-# class Sequencer(GenericProcessor):
-#     def __init__(self, config):
-#         self.config = config
-#         self.queue = deque()
-#         self.timer = None
-#
-#     # The callback for when the client receives a CONNACK response from the server.
-#     def on_connect(self, client, userdata, flags, rc):
-#         print("Connected with result code "+str(rc))
-#
-#         # Subscribing in on_connect() means that if we lose the connection and
-#         # reconnect then subscriptions will be renewed.
-#         client.subscribe(LEDSLIE_TOPIC_SEQUENCES)
-#
-#     # The callback for when a PUBLISH message is received from the server.
-#     def on_message(self, client, userdata, mqtt_msg):
-#         queue_started_empty = len(self.queue) == 0
-#         seq = ImageSequence(self.config).load(mqtt_msg.payload)
-#         client.publish("ledslie/logs/sequencer", "Incoming %s" % seq.id)
-#         self.queue.extend(seq)
-#         if queue_started_empty and self.queue:
-#             self.schedule_image(client)
-#
-#     def send_image(self, client, image):
-#         client.publish(LEDSLIE_TOPIC_SERIALIZER, bytes(image))
-#         client.publish("ledslie/logs/sequencer", "Published image %s" % crc32(bytes(image)))
-#
-#     def schedule_image(self, client):
-#         image = self.queue.popleft()
-#         self.send_image(client, image)
-#         if self.queue:  # there's still work in the queue
-#             client.publish("ledslie/logs/sequencer", "Scheduling next image for %dms. %d images in queue" %
-#                            (image.duration, len(self.queue)))
-#             self.timer = Timer(image.duration/1000.0, self.schedule_image, [client]).start()
-#         else:
-#             client.publish("ledslie/logs/sequencer", "Image Queue empty")
-#
-#     def run(self, client):
-#         client.on_connect = self.on_connect
-#         client.on_message = self.on_message
-#         client.connect(self.config.get('MQTT_BROKER_URL'),
-#                        self.config.get('MQTT_BROKER_PORT'),
-#                        self.config.get('MQTT_KEEPALIVE'))
-#         client.loop_forever()
-#
-#
-# if __name__ == '__main__':
-#     config = Config('.')
-#     config.from_object('ledslie.defaults')
-#     config.from_envvar('LEDSLIE_CONFIG')
-#     client = mqtt.Client()
-#     Sequencer(config).run(client)

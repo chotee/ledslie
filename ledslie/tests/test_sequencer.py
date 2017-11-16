@@ -7,7 +7,7 @@ from twisted.internet.test.test_tcp import FakeProtocol
 
 from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SEQUENCES
 import ledslie.processors.scheduler
-from ledslie.processors.scheduler import Scheduler
+from ledslie.processors.scheduler import Scheduler, ImageSequence
 
 class FakeClient(object):
     def __init__(self):
@@ -48,6 +48,9 @@ class FakeMqttProtocol(FakeProtocol):
     def subscribe(self, topic, qos=0):
         return succeed("subscribed to %s" % topic)
 
+    def publish(self, topic, message):
+        return succeed(None)
+
 
 class FakeLogger(object):
     def error(self, msg, **kwargs):
@@ -60,46 +63,55 @@ class FakeLogger(object):
         pass
 
 
-class TestSequencer(object):
+class TestScheduler(object):
 
     @pytest.fixture
-    def client(self):
-        return FakeClient()
-
-    @pytest.fixture
-    def seq(self, client):
+    def sched(self):
         self.config = Config('.')
         self.config.from_object('ledslie.defaults')
         endpoint = None
         factory = None
-        seq = Scheduler(endpoint, factory, self.config)
-        # seq.run(client)
-        return seq
+        s = Scheduler(endpoint, factory, self.config)
+        s.protocol = FakeMqttProtocol()
+        return s
 
-    def test_run(self, seq):
-        pass
-
-
-    def test_on_connect(self, seq):
+    def test_on_connect(self, sched):
         userdata = None
         flags = None
         rc = None
         ledslie.processors.scheduler.log = FakeLogger()
         protocol = FakeMqttProtocol()
-        seq.connectToBroker(protocol)
+        sched.connectToBroker(protocol)
 
-    def test_on_message(self, seq):
+    def test_on_message(self, sched):
+        image_size = sched.config.get('DISPLAY_WIDTH') * sched.config.get('DISPLAY_HEIGHT')
         topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
-        payload = ""
+        payload = self._test_sequence(sched)
         qos = 0
         dup = False
         retain = False
         msgId = 0
-        seq.onPublish(topic, payload, qos, dup, retain, msgId)
+        assert sched.catalog.is_empty()
+        sched.onPublish(topic, payload, qos, dup, retain, msgId)
+        assert not sched.catalog.is_empty()
+
+    def _test_sequence(self, sched):
+        image_size = sched.config.get('DISPLAY_WIDTH') * sched.config.get('DISPLAY_HEIGHT')
+        seq_id = 666
+        sequence = [
+            ['0' * image_size, {'duration': 100}],
+            ['1' * image_size, {'duration': 100}],
+            ['2' * image_size, {'duration': 100}],
+        ]
+        payload = msgpack.packb([seq_id, sequence])
+        return payload
+
+    def test_send_next_frame(self, sched):
+        sched.catalog.add_sequence(None, ImageSequence(self.config).load(self._test_sequence(sched)))
+        sched.send_next_frame()
 
     # def test_sequence(self, monkeypatch, seq, client):
     #     monkeypatch.setattr("ledslie.processors.sequencer.Timer", FakeTimer)
-    #     image_size = seq.config.get('DISPLAY_WIDTH') * seq.config.get('DISPLAY_HEIGHT')
     #     userdata = None
     #     mqtt_msg = MQTTMessage()
     #     seq_id = 666
