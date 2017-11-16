@@ -70,20 +70,20 @@ def send_serial(data):
 
 def prepare_image(image_data):
     shifted_data = bytearray()
-    shifted_data.append(1 << 7) ## start with a new frame marker, a byte with the high byte 1
     for b in image_data:
         shifted_data.append(b >> 1)  # Downshift the data one byte. making the highbyte 0.
+    shifted_data.append(1 << 7)  ## end with a new frame marker, a byte with the high byte 1
     return shifted_data
 
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, mqtt_msg):
     image = mqtt_msg.payload
-    data = prepare_image(image)
     if int(len(image)) != int(config.get("DISPLAY_SIZE")):
         client.publish("ledslie/logs/serializer", "WRONG message size. Expected %d but got %d." % (
             len(image), config.get("DISPLAY_SIZE")))
         return
+    data = prepare_image(image)
     send_serial(data)
     client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
         crc32(image), len(image)))
