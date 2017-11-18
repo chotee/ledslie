@@ -7,7 +7,9 @@ from twisted.internet.test.test_tcp import FakeProtocol
 
 from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SEQUENCES
 import ledslie.processors.scheduler
-from ledslie.processors.scheduler import Scheduler, ImageSequence
+from ledslie.processors.scheduler import Scheduler
+from ledslie.processors.messages import ImageSequence
+
 
 class FakeClient(object):
     def __init__(self):
