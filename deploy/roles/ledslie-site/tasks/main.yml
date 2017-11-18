@@ -42,8 +42,6 @@
     src: defaults-ledslie
     dest: /etc/default/ledslie
   become: yes
-  tags:
-    - update
 
 - name: Installing systemd templates
   template:
