@@ -38,9 +38,8 @@ def index():
     return render_template('index.html')
 
 
-def send_image(seq_id, sequence):
-    data = [seq_id, sequence]
-    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES, msgpack.packb(data))
+def send_image(sequence):
+    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES, msgpack.packb(sequence))
 
 
 @app.route('/gif', methods=['POST'])
@@ -51,11 +50,10 @@ def gif():
     except OSError:
         raise UnsupportedMediaType()
     sequence = []
-    sequence_id = generate_id()
     for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
         # frame_image, frame_info =
         sequence.append(process_frame(frame_raw))
-    send_image(sequence_id, sequence)
+    send_image(sequence)
 
     return Response(json.dumps({
         'frame_count': len(sequence),
