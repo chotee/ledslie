@@ -2,7 +2,8 @@ from collections import deque
 
 import msgpack
 
-from ledslie.processors.scheduler import log
+from twisted.logger import Logger
+log = Logger()
 
 
 class Image(object):
