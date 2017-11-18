@@ -163,11 +163,6 @@ class Scheduler(ClientService):
     def publish_vital_stats(self):
         pass
 
-    # def publish(self):
-    #     d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_STATS_BASE+"scheduler", message="Yea, stats")
-    #     d1.addErrback(self._logPublishFailure)
-    #     return d1
-
     def subscribe(self):
 
         def _logFailure(failure):
@@ -178,7 +173,6 @@ class Scheduler(ClientService):
             log.debug("subscriber response {value!r}", value=value)
             return True
 
-        #        d1 = self.protocol.subscribe("foo/bar/baz1", 2)
         d1 = self.protocol.subscribe(LEDSLIE_TOPIC_SEQUENCES, 1)
         d1.addCallbacks(_logGrantedQoS, _logFailure)
         return d1
@@ -237,12 +231,11 @@ class Image(object):
 class ImageSequence(object):
     def __init__(self, config):
         self.config = config
-        self.id = None
         self.sequence = deque()
 
     def load(self, payload):
-        self.id, seq = msgpack.unpackb(payload)
-        for image_data, image_info in seq:
+        seq_data = msgpack.unpackb(payload)
+        for image_data, image_info in seq_data:
             if len(image_data) != self.config.get('DISPLAY_SIZE'):
                 log.error("Images are of the wrong size. Ignoring.")
                 return

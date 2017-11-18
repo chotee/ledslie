@@ -58,10 +58,6 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(LEDSLIE_TOPIC_TYPESETTER)
 
 
-def generate_id():
-    return a85encode(os.urandom(4)).decode("ASCII")
-
-
 def typeset_1line(msg):
     image = Image.new("L", (config.get("DISPLAY_WIDTH"),
                             config.get("DISPLAY_HEIGHT")))
@@ -96,12 +92,12 @@ def _get_font_filepath(fontFileName):
     return os.path.realpath(os.path.join(config.get("FONT_DIRECTORY"), fontFileName))
 
 
-def send_image(client, image_id, image_data):
-    data_objs = [image_id, image_data]
+def send_image(client, image_data):
     # print("Sending the image data:")
     # pprint(data_objs)
-    data = msgpack.packb(data_objs)
-    client.publish(LEDSLIE_TOPIC_SEQUENCES, data)
+    data = msgpack.packb(image_data)
+    topic = LEDSLIE_TOPIC_SEQUENCES
+    client.publish(topic, data)
 
 
 def on_message(client, userdata, mqtt_msg):
@@ -121,7 +117,7 @@ def on_message(client, userdata, mqtt_msg):
         print("Unknown type %s" % text_type)
     if image_bytes is None:
         return
-    send_image(client, generate_id(), [[image_bytes, {'duration': data.get('duration', 5000)}],])
+    send_image(client, [[image_bytes, {'duration': data.get('duration', 5000)}],])
 
 
 def main():
