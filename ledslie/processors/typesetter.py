@@ -32,7 +32,6 @@ OR
 # Start with arguments "show 'hello world'" and it will show you how 'hello world' will be rendered.
 
 import os, sys
-from base64 import a85encode
 
 from PIL import ImageFont
 from PIL import Image
@@ -109,7 +108,7 @@ def on_message(client, userdata, mqtt_msg):
         image_bytes = typeset_1line(mqtt_msg.payload[:30]).tobytes()
     else:
         data = msgpack.unpackb(mqtt_msg.payload)
-        duration = data.get('duration', 5000)
+        duration = data.get('duration', DISPLAY_DEFAULT_DELAY)
         text_type = data[b'type']
         image_bytes = None
         if text_type == b'1line':
