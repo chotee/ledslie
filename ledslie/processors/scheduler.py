@@ -27,63 +27,18 @@ each name only the last sequence is retained. THis allows producers to provide u
 An image is simply a sequence of one frame
 """
 
-import sys
-
-from flask.config import Config
-from mqtt.client.factory import MQTTFactory
-from twisted.application.internet import ClientService, backoffPolicy, _maybeGlobalReactor
-from twisted.internet import reactor, task
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import clientFromString
-from twisted.logger import (
-    Logger, LogLevel, globalLogBeginner, textFileLogObserver,
-    FilteringLogObserver, LogLevelFilterPredicate)
+from twisted.internet import reactor
+from twisted.logger import Logger
 
 # Global object to control globally namespace logging
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_SERIALIZER
 from ledslie.processors.messages import ImageSequence
-
+from ledslie.processors.service import CreateService, GenericMQTTPubSubService
 # ----------------
 # Global variables
 # ----------------
 
-logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
-
-
-# -----------------
-# Utility Functions
-# -----------------
-
-def startLogging(console=True, filepath=None):
-    '''
-    Starts the global Twisted logger subsystem with maybe
-    stdout and/or a file specified in the config file
-    '''
-    global logLevelFilterPredicate
-
-    observers = []
-    if console:
-        observers.append( FilteringLogObserver(observer=textFileLogObserver(sys.stdout),
-            predicates=[logLevelFilterPredicate] ))
-
-    if filepath is not None and filepath != "":
-        observers.append( FilteringLogObserver(observer=textFileLogObserver(open(filepath, 'a')),
-            predicates=[logLevelFilterPredicate] ))
-    globalLogBeginner.beginLoggingTo(observers)
-
-
-def setLogLevel(namespace=None, levelStr='info'):
-    '''
-    Set a new log level for a given namespace
-    LevelStr is: 'critical', 'error', 'warn', 'info', 'debug'
-    '''
-    level = LogLevel.levelWithName(levelStr)
-    logLevelFilterPredicate.setLogLevelForNamespace(namespace=namespace, level=level)
-
-# -----------------------
-# MQTT Subscriber Service
-# ------------------------
-
+log = Logger()
 
 class Catalog(object):
     def __init__(self):
@@ -117,62 +72,15 @@ class Catalog(object):
         self.sequences[program_id] = seq
 
 
-class Scheduler(ClientService):
-    def __init__(self, endpoint, factory, config, reactor=None):
-        super().__init__(endpoint, factory, retryPolicy=backoffPolicy(), clock=reactor)
-        self.reactor = _maybeGlobalReactor(reactor)
-        self.config = config
+class Scheduler(GenericMQTTPubSubService):
+    subscriptions = (
+        (LEDSLIE_TOPIC_SEQUENCES, 1),
+    )
+
+    def __init__(self, endpoint, factory, config):
+        super().__init__(endpoint, factory, config)
         self.catalog = Catalog()
         self.sequencer = None
-
-    def startService(self):
-        log.info("starting MQTT Client Subscriber Service")
-        # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker)
-        ClientService.startService(self)
-
-
-    @inlineCallbacks
-    def connectToBroker(self, protocol):
-        '''
-        Connect to MQTT broker
-        '''
-        self.protocol                 = protocol
-        self.protocol.onPublish       = self.onPublish
-        self.protocol.onDisconnection = self.onDisconnection
-        self.protocol.setWindowSize(3)
-        self.stats_task = task.LoopingCall(self.publish_vital_stats)
-        self.stats_task.start(5.0, now=False)
-        try:
-            yield self.protocol.connect("TwistedMQTT-pubsubs", keepalive=60)
-            yield self.subscribe()
-        except Exception as e:
-            log.error("Connecting to {broker} raised {excp!s}",
-                      broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
-        else:
-            log.info("Connected and subscribed to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
-
-    def _logPublishFailure(failure):
-        log.debug("publisher reported {message}", message=failure.getErrorMessage())
-        return failure
-
-    def publish_vital_stats(self):
-        pass
-
-    def subscribe(self):
-
-        def _logFailure(failure):
-            log.debug("subscriber reported {message}", message=failure.getErrorMessage())
-            return failure
-
-        def _logGrantedQoS(value):
-            log.debug("subscriber response {value!r}", value=value)
-            return True
-
-        d1 = self.protocol.subscribe(LEDSLIE_TOPIC_SEQUENCES, 1)
-        d1.addCallbacks(_logGrantedQoS, _logFailure)
-        return d1
-
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         '''
@@ -206,26 +114,7 @@ class Scheduler(ClientService):
         d1.addErrback(self._logPublishFailure)
         return d1
 
-    def onDisconnection(self, reason):
-        '''
-        get notfied of disconnections
-        and get a deferred for a new protocol object (next retry)
-        '''
-        log.debug("<Connection was lost !> <reason={r}>", r=reason)
-        self.whenConnected().addCallback(self.connectToBroker)
-
 
 if __name__ == '__main__':
-    config = Config('.')
-    config.from_object('ledslie.defaults')
-    config.from_envvar('LEDSLIE_CONFIG')
-
-    log = Logger()
-    startLogging()
-    setLogLevel(namespace='mqtt',     levelStr='debug')
-    setLogLevel(namespace='__main__', levelStr='debug')
-    factory    = MQTTFactory(profile=MQTTFactory.PUBLISHER | MQTTFactory.SUBSCRIBER)
-    myEndpoint = clientFromString(reactor, config.get('MQTT_BROKER_CONN_STRING'))
-    serv       = Scheduler(myEndpoint, factory, config)
-    serv.startService()
+    log = CreateService(Scheduler)
     reactor.run()
