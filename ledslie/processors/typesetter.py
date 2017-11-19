@@ -76,7 +76,6 @@ class Typesetter(GenericMQTTPubSubService):
             image_bytes = None
             if text_type == b'1line':
                 msg = data[b'text'].decode('UTF-8')
-                # client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)
                 # pprint(data)
                 image_bytes = self.typeset_1line(msg).tobytes()
             elif text_type == b'3lines':

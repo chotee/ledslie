@@ -57,4 +57,18 @@ class GenericTextLayout(GenericMessage):
 class TextSingleLineLayout(GenericTextLayout):
     def __init__(self):
         super().__init__()
+        self.type = '1line'
         self.text = ""
+
+    def __bytes__(self):
+        return msgpack.packb({'type': self.type, 'text': self.text})
+
+
+class TextTrippleLinesLayout(GenericTextLayout):
+    def __init__(self):
+        super().__init__()
+        self.type = '3lines'
+        self.lines = []
+
+    def __bytes__(self):
+        return msgpack.packb({'type': self.type, 'lines': self.lines})
