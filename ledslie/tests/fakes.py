@@ -1,3 +1,6 @@
+from twisted.internet.test.test_tcp import FakeProtocol
+from twisted.internet.defer import succeed
+
 class FakeClient(object):
     def __init__(self):
         self.pubed_messages = []
@@ -18,15 +21,53 @@ class FakeClient(object):
         return [msg for msg in self.pubed_messages if msg[0].startswith(topic)]
 
 
-class FakeMQTTMessage(object):
-    def __init__(self, topic=None, payload=None):
-        self.topic = topic
-        self.payload = payload
-
-
 class FakeTimer(object):
     def __init__(self, delay, func, *args, **kwargs):
         pass
 
     def start(self):
         pass
+
+
+class FakeMqttProtocol(FakeProtocol):
+    def __init__(self):
+        self._published_messages = []
+
+    def setWindowSize(self, size):
+        pass
+
+    def connect(self, name, keepalive=None):
+        pass
+
+    def subscribe(self, topic, qos=0):
+        return succeed("subscribed to %s" % topic)
+
+    def publish(self, topic, message):
+        self._published_messages.append((topic, message))
+        return succeed(None)
+
+
+class FakeLogger(object):
+    def error(self, msg, **kwargs):
+        pass
+        #raise RuntimeError(msg.format(**kwargs))
+
+    def info(self, msg, **kwargs):
+        pass
+
+    def debug(self, msg, **kwargs):
+        pass
+
+
+# class FakeMQTTMessage(object):
+#     def __init__(self, topic=None, payload=None):
+#         self.topic = topic
+#         self.payload = payload
+#
+#
+# class FakeTimer(object):
+#     def __init__(self, delay, func, *args, **kwargs):
+#         pass
+#
+#     def start(self):
+#         pass

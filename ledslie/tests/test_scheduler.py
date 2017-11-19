@@ -1,73 +1,12 @@
 import pytest
 import msgpack
 from flask.config import Config
-from paho.mqtt.client import MQTTMessage
-from twisted.internet.defer import Deferred, succeed
-from twisted.internet.test.test_tcp import FakeProtocol
 
-from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SEQUENCES
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES
 import ledslie.processors.scheduler
 from ledslie.processors.scheduler import Scheduler
 from ledslie.processors.messages import ImageSequence
-
-
-class FakeClient(object):
-    def __init__(self):
-        self.pubed_messages = []
-
-    def connect(self, host, port, keepalive):
-        pass
-
-    def subscribe(self, topic):
-        pass
-
-    def publish(self, topic, data):
-        self.pubed_messages.append([topic, data])
-
-    def loop_forever(self):
-        pass
-
-    def assert_message_pubed(self, topic):
-        return [msg for msg in self.pubed_messages if msg[0].startswith(topic)]
-
-
-class FakeTimer(object):
-    def __init__(self, delay, func, *args, **kwargs):
-        pass
-
-    def start(self):
-        pass
-
-
-
-class FakeMqttProtocol(FakeProtocol):
-    def __init__(self):
-        self._published_messages = []
-
-    def setWindowSize(self, size):
-        pass
-
-    def connect(self, name, keepalive=None):
-        pass
-
-    def subscribe(self, topic, qos=0):
-        return succeed("subscribed to %s" % topic)
-
-    def publish(self, topic, message):
-        self._published_messages.append((topic, message))
-        return succeed(None)
-
-
-class FakeLogger(object):
-    def error(self, msg, **kwargs):
-        pass
-        #raise RuntimeError(msg.format(**kwargs))
-
-    def info(self, msg, **kwargs):
-        pass
-
-    def debug(self, msg, **kwargs):
-        pass
+from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
 
 
 class TestScheduler(object):
@@ -83,9 +22,6 @@ class TestScheduler(object):
         return s
 
     def test_on_connect(self, sched):
-        userdata = None
-        flags = None
-        rc = None
         ledslie.processors.scheduler.log = FakeLogger()
         protocol = FakeMqttProtocol()
         sched.connectToBroker(protocol)

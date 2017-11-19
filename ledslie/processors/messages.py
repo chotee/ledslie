@@ -6,7 +6,15 @@ from twisted.logger import Logger
 log = Logger()
 
 
-class Image(object):
+class GenericMessage(object):
+    def load(self):
+        raise NotImplemented()
+
+    def __bytes__(self):
+        raise NotImplemented()
+
+
+class Image(GenericMessage):
     def __init__(self, img_data, duration):
         self.img_data = img_data
         self.duration = duration
@@ -15,7 +23,7 @@ class Image(object):
         return self.img_data
 
 
-class ImageSequence(object):
+class ImageSequence(GenericMessage):
     def __init__(self, config):
         self.config = config
         self.sequence = deque()
@@ -39,3 +47,14 @@ class ImageSequence(object):
 
     def next_frame(self):
         return self.sequence.popleft()
+
+
+class GenericTextLayout(GenericMessage):
+    def __init__(self):
+        self.program = None
+
+
+class TextSingleLineLayout(GenericTextLayout):
+    def __init__(self):
+        super().__init__()
+        self.text = ""
