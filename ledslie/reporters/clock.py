@@ -1,26 +1,22 @@
 import sys
 from datetime import datetime
 
+from mqtt.client.factory import MQTTFactory
+from twisted.application.internet import ClientService
 from twisted.internet import reactor, task
-from twisted.internet.defer import inlineCallbacks, DeferredList
-from twisted.application.internet import ClientService, backoffPolicy
+from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 from twisted.logger import (
     Logger, LogLevel, globalLogBeginner, textFileLogObserver,
     FilteringLogObserver, LogLevelFilterPredicate)
 
-from flask.config import Config
-import msgpack
-
-from mqtt.client.factory import MQTTFactory
+from ledslie.config import Config
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
+from ledslie.messages import TextSingleLineLayout
 
 # ----------------
 # Global variables
 # ----------------
-
-# Global object to control globally namespace logging
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_SERIALIZER
-from ledslie.processors.messages import TextSingleLineLayout
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -56,14 +52,9 @@ def setLogLevel(namespace=None, levelStr='info'):
     logLevelFilterPredicate.setLogLevelForNamespace(namespace=namespace, level=level)
 
 
-# -----------------------
-# MQTT Publishing Service
-# -----------------------
-
-class MQTTService(ClientService):
-    def __init__(self, endpoint, factory, config):
+class ClockReporter(ClientService):
+    def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
-        self.config = config
         self.count = 0
 
     def startService(self):
@@ -102,7 +93,6 @@ class MQTTService(ClientService):
         self.whenConnected().addCallback(self.connectToBroker)
 
     def publish(self):
-        display_size = config['DISPLAY_SIZE']
         def _logFailure(failure):
             log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
@@ -117,22 +107,18 @@ class MQTTService(ClientService):
         msg.duration = 1000
         msg.program = 'clock'
         # d = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, qos=1, message='\xff'*self.config.get("DISPLAY_SIZE"))
-        d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER, qos=1, message=bytearray(msg))
+        d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, qos=1, message=bytearray(msg))
         return d
 
 
 if __name__ == '__main__':
-    config = Config('.')
-    config.from_object('ledslie.defaults')
-    config.from_envvar('LEDSLIE_CONFIG')
-
     log = Logger()
     startLogging()
     setLogLevel(namespace='mqtt', levelStr='debug')
     setLogLevel(namespace='__main__', levelStr='debug')
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
-    myEndpoint = clientFromString(reactor, config.get('MQTT_BROKER_CONN_STRING'))
-    serv = MQTTService(myEndpoint, factory, config)
+    myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
+    serv = ClockReporter(myEndpoint, factory)
     serv.startService()
     reactor.run()

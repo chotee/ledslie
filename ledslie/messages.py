@@ -3,6 +3,9 @@ from collections import deque
 import msgpack
 
 from twisted.logger import Logger
+
+from ledslie.config import Config
+
 log = Logger()
 
 
@@ -24,19 +27,19 @@ class Image(GenericMessage):
 
 
 class ImageSequence(GenericMessage):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
         self.sequence = deque()
 
     def load(self, payload):
+        config = Config()
         seq_images, seq_info = msgpack.unpackb(payload)
         self.program = seq_info.get(b'program', None)
         for image_data, image_info in seq_images:
-            if len(image_data) != self.config.get('DISPLAY_SIZE'):
+            if len(image_data) != config.get('DISPLAY_SIZE'):
                 log.error("Images are of the wrong size. Ignoring.")
                 return
             try:
-                image_duration = image_info.get(b'duration', self.config['DISPLAY_DEFAULT_DELAY'])
+                image_duration = image_info.get(b'duration', config['DISPLAY_DEFAULT_DELAY'])
             except KeyError:
                 break
             self.sequence.append(Image(image_data, duration=image_duration))

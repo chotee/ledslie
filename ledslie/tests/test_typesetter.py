@@ -1,36 +1,21 @@
-import msgpack
 import pytest
 
+import ledslie.processors.typesetter
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
     LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
-import ledslie.processors.typesetter
-from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
-from ledslie.processors.typesetter import Typesetter
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.service import Config
+from ledslie.processors.typesetter import Typesetter
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-
-
-class FakeConfig(object):
-    _values = {
-        'DISPLAY_SIZE': 144*24,
-        'DISPLAY_DEFAULT_DELAY': 5000,
-    }
-    def get(self, key, default=None):
-        return self._values.get(key, default)
-
-    def __getitem__(self, item):
-        return self._values[item]
 
 
 class TestTypesetter(object):
 
     @pytest.fixture
     def tsetter(self):
-        self.config = Config('.')
-        self.config.from_object('ledslie.defaults')
         endpoint = None
         factory = None
-        s = Typesetter(endpoint, factory, self.config)
+        s = Typesetter(endpoint, factory)
         s.protocol = FakeMqttProtocol()
         return s
 
@@ -80,5 +65,5 @@ class TestTypesetter(object):
 
         seq_topic, seq_data = tsetter.protocol._published_messages[-1]
         assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + b"foobar") == seq_topic
-        seq = ImageSequence(FakeConfig()).load(seq_data)
+        seq = ImageSequence().load(seq_data)
         assert 1000 == seq.duration

@@ -1,11 +1,11 @@
-import pytest
 import msgpack
+import pytest
 from flask.config import Config
 
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 import ledslie.processors.scheduler
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
+from ledslie.messages import ImageSequence
 from ledslie.processors.scheduler import Scheduler
-from ledslie.processors.messages import ImageSequence
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
 
 
@@ -13,11 +13,9 @@ class TestScheduler(object):
 
     @pytest.fixture
     def sched(self):
-        self.config = Config('.')
-        self.config.from_object('ledslie.defaults')
         endpoint = None
         factory = None
-        s = Scheduler(endpoint, factory, self.config)
+        s = Scheduler(endpoint, factory)
         s.protocol = FakeMqttProtocol()
         return s
 
@@ -46,7 +44,7 @@ class TestScheduler(object):
 
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
-        sched.catalog.add_sequence(None, ImageSequence(self.config).load(self._test_sequence(sched)))
+        sched.catalog.add_sequence(None, ImageSequence().load(self._test_sequence(sched)))
         assert 0 == len(sched.protocol._published_messages)
 
         sched.send_next_frame()  # Frame 0

@@ -18,7 +18,6 @@
 
 import sys
 
-from flask import Config
 from mqtt.client.factory import MQTTFactory
 from twisted.application.internet import ClientService, backoffPolicy, _maybeGlobalReactor
 from twisted.internet import reactor, task
@@ -26,6 +25,8 @@ from twisted.internet.defer import inlineCallbacks, DeferredList
 from twisted.internet.endpoints import clientFromString
 from twisted.logger import Logger, LogLevel, globalLogBeginner, textFileLogObserver, \
     FilteringLogObserver, LogLevelFilterPredicate
+
+from ledslie.config import Config
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -72,22 +73,19 @@ def CreateService(ServiceCls):
     startLogging()
     setLogLevel(namespace='mqtt', levelStr='debug')
     setLogLevel(namespace='__main__', levelStr='debug')
-    config = Config('.')
-    config.from_object('ledslie.defaults')
-    config.from_envvar('LEDSLIE_CONFIG')
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER | MQTTFactory.SUBSCRIBER)
-    myEndpoint = clientFromString(reactor, config.get('MQTT_BROKER_CONN_STRING'))
-    serv = ServiceCls(myEndpoint, factory, config)
+    myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
+    serv = ServiceCls(myEndpoint, factory)
     serv.startService()
 
 
 class GenericMQTTPubSubService(ClientService):
     subscriptions = ()
 
-    def __init__(self, endpoint, factory, config, reactor=None):
+    def __init__(self, endpoint, factory, reactor=None):
         super().__init__(endpoint, factory, retryPolicy=backoffPolicy(), clock=reactor)
         self.reactor = _maybeGlobalReactor(reactor)
-        self.config = config
+        self.config = Config()
 
     def startService(self):
         log.info("starting MQTT Client Subscriber Service")

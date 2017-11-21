@@ -31,21 +31,18 @@ OR
 # Start without arguments it's the typesetter
 # Start with arguments "show 'hello world'" and it will show you how 'hello world' will be rendered.
 import os
-from PIL import ImageFont
+
 from PIL import Image
 from PIL import ImageDraw
-
-import msgpack
-
+from PIL import ImageFont
 from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.service import GenericMQTTPubSubService, CreateService
-
 
 log = Logger(__file__)
 
@@ -59,8 +56,8 @@ class Typesetter(GenericMQTTPubSubService):
         (LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, 1),
     )
 
-    def __init__(self, endpoint, factory, config):
-        super().__init__(endpoint, factory, config)
+    def __init__(self, endpoint, factory):
+        super().__init__(endpoint, factory)
         self.sequencer = None
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
@@ -85,7 +82,7 @@ class Typesetter(GenericMQTTPubSubService):
             program = msg.program
         if image_bytes is None:
             return
-        seq_msg = ImageSequence(self.config)
+        seq_msg = ImageSequence()
         seq_msg.program = program
         seq_msg.sequence.append((image_bytes, {'duration': duration}))
         self.send_image(seq_msg)

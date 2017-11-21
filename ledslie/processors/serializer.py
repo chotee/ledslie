@@ -30,11 +30,11 @@ from zlib import crc32
 import serial
 
 import paho.mqtt.client as mqtt
-from flask.config import Config
 
+from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 
-config = Config(".")
+config = Config()
 
 serial_port = None
 
