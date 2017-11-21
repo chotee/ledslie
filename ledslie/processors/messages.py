@@ -26,11 +26,13 @@ class Image(GenericMessage):
 class ImageSequence(GenericMessage):
     def __init__(self, config):
         self.config = config
+        self.program = None
         self.sequence = deque()
 
     def load(self, payload):
-        seq_data = msgpack.unpackb(payload)
-        for image_data, image_info in seq_data:
+        seq_images, seq_info = msgpack.unpackb(payload)
+        self.program = seq_info.get(b'program', None)
+        for image_data, image_info in seq_images:
             if len(image_data) != self.config.get('DISPLAY_SIZE'):
                 log.error("Images are of the wrong size. Ignoring.")
                 return
@@ -40,6 +42,12 @@ class ImageSequence(GenericMessage):
                 break
             self.sequence.append(Image(image_data, duration=image_duration))
         return self
+
+    def __bytes__(self):
+        fields = ['program']
+        seq_info = dict([(k, v) for k, v in self.__dict__.items() if k in fields and v is not None])
+        images = [(idata, iinfo) for idata, iinfo in self.sequence]
+        return msgpack.packb((images, seq_info))
 
     @property
     def duration(self):
@@ -54,6 +62,12 @@ class GenericTextLayout(GenericMessage):
         self.program = None
         self.duration = None
 
+    def load(self, payload):
+        obj_data = msgpack.unpackb(payload)
+        self.duration = obj_data.get(b'duration', None)
+        self.program = obj_data.get(b'program', None)
+        return obj_data
+
 
 class TextSingleLineLayout(GenericTextLayout):
     def __init__(self):
@@ -61,13 +75,12 @@ class TextSingleLineLayout(GenericTextLayout):
         self.text = ""
 
     def load(self, payload):
-        obj_data = msgpack.unpackb(payload)
-        self.duration = obj_data.get(b'duration', None)
+        obj_data = super(TextSingleLineLayout, self).load(payload)
         self.text = obj_data.get(b'text', b"").decode()
         return self
 
     def __bytes__(self):
-        return msgpack.packb({'text': self.text, 'duration': self.duration})
+        return msgpack.packb(self.__dict__)
 
 
 class TextTripleLinesLayout(GenericTextLayout):
@@ -76,10 +89,9 @@ class TextTripleLinesLayout(GenericTextLayout):
         self.lines = []
 
     def load(self, payload):
-        obj_data = msgpack.unpackb(payload)
-        self.duration = obj_data.get(b'duration', None)
+        obj_data = super(TextTripleLinesLayout, self).load(payload)
         self.lines = [l.decode() for l in obj_data.get(b'lines', [])]
         return self
 
     def __bytes__(self):
-        return msgpack.packb({'lines': self.lines, 'duration': self.duration})
+        return msgpack.packb(self.__dict__)

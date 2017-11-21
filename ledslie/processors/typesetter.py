@@ -43,7 +43,7 @@ from twisted.logger import Logger
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, \
     LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout
+from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.service import GenericMQTTPubSubService, CreateService
 
 
@@ -68,38 +68,32 @@ class Typesetter(GenericMQTTPubSubService):
         Callback Receiving messages from publisher
         '''
         log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
-        image_bytes = None
+        program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
-            image_bytes, duration = self.got_simple_text(payload)
-        elif topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
-            image_bytes, duration = self.got_1line_text(payload)
-        elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
-            image_bytes, duration = self.got_3lines_text(payload)
+            image_bytes = self.typeset_1line(payload[:30]).tobytes()
+            duration = DISPLAY_DEFAULT_DELAY
+        else:
+            if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
+                msg = TextSingleLineLayout().load(payload)
+                image_bytes = self.typeset_1line(msg.text).tobytes()
+            elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
+                msg = TextTripleLinesLayout().load(payload)
+                image_bytes = self.typeset_3lines(msg.lines).tobytes()
+            else:
+                raise NotImplemented(topic)
+            duration = msg.duration
+            program = msg.program
         if image_bytes is None:
             return
-        msg = [[image_bytes, {'duration': duration}]]
-        self.send_image(msg)
-
-    def got_1line_text(self, payload):
-        msg = TextSingleLineLayout().load(payload)
-        image_bytes = self.typeset_1line(msg.text).tobytes()
-        return image_bytes, msg.duration
-
-    def got_3lines_text(self, payload):
-        msg = TextTripleLinesLayout().load(payload)
-        # lines = [l.decode('UTF-8') for l in data[b'lines']]
-        image_bytes = self.typeset_3lines(msg.lines).tobytes()
-        return image_bytes, msg.duration
-
-    def got_simple_text(self, payload):
-        duration = DISPLAY_DEFAULT_DELAY
-        image_bytes = self.typeset_1line(payload[:30]).tobytes()
-        return duration, image_bytes
+        seq_msg = ImageSequence(self.config)
+        seq_msg.program = program
+        seq_msg.sequence.append((image_bytes, {'duration': duration}))
+        self.send_image(seq_msg)
 
     def send_image(self, image_data):
         # print("Sending the image data:")
         # pprint(data_objs)
-        data = msgpack.packb(image_data)
+        data = bytes(image_data)
         topic = LEDSLIE_TOPIC_SEQUENCES
         self.protocol.publish(topic, data)
 

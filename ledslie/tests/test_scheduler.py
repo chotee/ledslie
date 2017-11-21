@@ -34,13 +34,14 @@ class TestScheduler(object):
         assert not sched.catalog.is_empty()
 
     def _test_sequence(self, sched):
+        sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')
-        sequence = [
+        image_sequence = [
             ['0' * image_size, {'duration': 100}],
             ['1' * image_size, {'duration': 100}],
             ['2' * image_size, {'duration': 100}],
         ]
-        payload = msgpack.packb(sequence)
+        payload = msgpack.packb([image_sequence, sequence_info])
         return payload
 
     def test_send_next_frame(self, sched):
@@ -71,7 +72,7 @@ class TestScheduler(object):
         sequence = [
             ['666', {'duration': 100}],  # Wrong number of bytes in the image
         ]
-        payload = msgpack.packb(sequence)
+        payload = msgpack.packb([sequence, {}])
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.is_empty()
@@ -79,7 +80,7 @@ class TestScheduler(object):
         sequence = [
             ['0'*image_size, {}],  # No duration information, will default to the standard one.
         ]
-        payload = msgpack.packb(sequence)
+        payload = msgpack.packb([sequence, {}])
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.has_content()
