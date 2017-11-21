@@ -16,10 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
-from base64 import a85encode
-from zlib import crc32
-
 from PIL import Image, ImageSequence
 import msgpack
 
@@ -27,7 +23,8 @@ from werkzeug.exceptions import UnsupportedMediaType
 from flask import Flask, render_template, request, json, Response
 from flask_mqtt import Mqtt
 
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_SEQUENCES
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
+    LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
 
 app = Flask(__name__)
 mqtt = Mqtt()
@@ -39,7 +36,7 @@ def index():
 
 
 def send_image(sequence):
-    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES, msgpack.packb(sequence))
+    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES_UNNAMED, msgpack.packb(sequence))
 
 
 @app.route('/gif', methods=['POST'])
@@ -66,10 +63,9 @@ def text1():
     text = request.form['text']
     duration = int(request.form['duration'])
     set_data = {
-        'type': '1line',
         'text': text,
         'duration': duration}
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER, msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_1LINE, msgpack.packb(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 
@@ -78,11 +74,10 @@ def text3():
     lines = request.form['l1'], request.form['l2'], request.form['l3']
     duration = int(request.form['duration'])
     set_data = {
-        'type': '3lines',
         'lines': lines,
         'duration': duration
     }
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER, msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, msgpack.packb(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 
@@ -100,10 +95,6 @@ def process_frame(frame_raw):
         # 'data': repr([d for d in frame.tobytes()]),
     }
     return frame_image.tobytes(), frame_info
-
-
-def generate_id():
-    return a85encode(os.urandom(4)).decode("ASCII")
 
 
 def make_app():
