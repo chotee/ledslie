@@ -85,7 +85,7 @@ class MQTTService(ClientService):
         self.task = task.LoopingCall(self.publish)
         self.task.start(1, now=False)
         try:
-            yield self.protocol.connect("TwistedMQTT-pub", keepalive=60)
+            yield self.protocol.connect("TwistedMQTT-clock", keepalive=60)
         except Exception as e:
             log.error("Connecting to {broker} raised {excp!s}",
                       broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)

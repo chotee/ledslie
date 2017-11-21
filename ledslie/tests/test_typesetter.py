@@ -1,12 +1,25 @@
+import msgpack
 import pytest
 
-from ledslie.defaults import DISPLAY_WIDTH, DISPLAY_HEIGHT, FONT_DIRECTORY
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
+    LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES
 import ledslie.processors.typesetter
-from ledslie.processors.messages import TextSingleLineLayout, TextTrippleLinesLayout
+from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.typesetter import Typesetter
 from ledslie.processors.service import Config
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
+
+
+class FakeConfig(object):
+    _values = {
+        'DISPLAY_SIZE': 144*24,
+        'DISPLAY_DEFAULT_DELAY': 5000,
+    }
+    def get(self, key, default=None):
+        return self._values.get(key, default)
+
+    def __getitem__(self, item):
+        return self._values[item]
 
 
 class TestTypesetter(object):
@@ -34,7 +47,7 @@ class TestTypesetter(object):
         assert 1 == len(tsetter.protocol._published_messages)
 
     def test_ledslie_typesetter_1line(self, tsetter):
-        topic = LEDSLIE_TOPIC_TYPESETTER
+        topic = LEDSLIE_TOPIC_TYPESETTER_1LINE
         msg = TextSingleLineLayout()
         msg.text = 'Foo bar quux.'
         assert 0 == len(tsetter.protocol._published_messages)
@@ -42,9 +55,23 @@ class TestTypesetter(object):
         assert 1 == len(tsetter.protocol._published_messages)
 
     def test_ledslie_typesetter_3lines(self, tsetter):
-        topic = LEDSLIE_TOPIC_TYPESETTER
-        msg = TextTrippleLinesLayout()
+        topic = LEDSLIE_TOPIC_TYPESETTER_3LINES
+        msg = TextTripleLinesLayout()
         msg.lines = ["One", "Two", "Three"]
         assert 0 == len(tsetter.protocol._published_messages)
         tsetter.onPublish(topic, bytes(msg), qos=0, dup=False, retain=False, msgId=0)
         assert 1 == len(tsetter.protocol._published_messages)
+
+    def test_ledslie_typesetter_duration(self, tsetter):
+        topic = LEDSLIE_TOPIC_TYPESETTER_3LINES
+        msg = TextSingleLineLayout()
+        msg.text = 'Foo bar quux.'
+        msg.duration = 1000
+        assert 0 == len(tsetter.protocol._published_messages)
+        tsetter.onPublish(topic, bytes(msg), qos=0, dup=False, retain=False, msgId=0)
+        assert 1 == len(tsetter.protocol._published_messages)
+
+        seq_topic, seq_data = tsetter.protocol._published_messages[-1]
+        assert LEDSLIE_TOPIC_SEQUENCES == seq_topic
+        seq = ImageSequence(FakeConfig()).load(seq_data)
+        assert 1000 == seq.duration

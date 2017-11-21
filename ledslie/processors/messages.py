@@ -7,7 +7,7 @@ log = Logger()
 
 
 class GenericMessage(object):
-    def load(self):
+    def load(self, obj_data):
         raise NotImplemented()
 
     def __bytes__(self):
@@ -52,23 +52,34 @@ class ImageSequence(GenericMessage):
 class GenericTextLayout(GenericMessage):
     def __init__(self):
         self.program = None
+        self.duration = None
 
 
 class TextSingleLineLayout(GenericTextLayout):
     def __init__(self):
         super().__init__()
-        self.type = '1line'
         self.text = ""
 
+    def load(self, payload):
+        obj_data = msgpack.unpackb(payload)
+        self.duration = obj_data.get(b'duration', None)
+        self.text = obj_data.get(b'text', b"").decode()
+        return self
+
     def __bytes__(self):
-        return msgpack.packb({'type': self.type, 'text': self.text})
+        return msgpack.packb({'text': self.text, 'duration': self.duration})
 
 
-class TextTrippleLinesLayout(GenericTextLayout):
+class TextTripleLinesLayout(GenericTextLayout):
     def __init__(self):
         super().__init__()
-        self.type = '3lines'
         self.lines = []
 
+    def load(self, payload):
+        obj_data = msgpack.unpackb(payload)
+        self.duration = obj_data.get(b'duration', None)
+        self.lines = [l.decode() for l in obj_data.get(b'lines', [])]
+        return self
+
     def __bytes__(self):
-        return msgpack.packb({'type': self.type, 'lines': self.lines})
+        return msgpack.packb({'lines': self.lines, 'duration': self.duration})

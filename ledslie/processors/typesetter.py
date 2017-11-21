@@ -35,14 +35,15 @@ from PIL import ImageFont
 from PIL import Image
 from PIL import ImageDraw
 
-import paho.mqtt.client as mqtt
 import msgpack
 
 from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, \
+    LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
+from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout
 from ledslie.processors.service import GenericMQTTPubSubService, CreateService
 
 
@@ -53,7 +54,8 @@ os.chdir(SCRIPT_DIR)
 
 class Typesetter(GenericMQTTPubSubService):
     subscriptions = (
-        (LEDSLIE_TOPIC_TYPESETTER, 1),
+        (LEDSLIE_TOPIC_TYPESETTER_1LINE, 1),
+        (LEDSLIE_TOPIC_TYPESETTER_3LINES, 1),
         (LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, 1),
     )
 
@@ -66,27 +68,33 @@ class Typesetter(GenericMQTTPubSubService):
         Callback Receiving messages from publisher
         '''
         log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
+        image_bytes = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
-            duration = DISPLAY_DEFAULT_DELAY
-            image_bytes = self.typeset_1line(payload[:30]).tobytes()
-        else:
-            data = msgpack.unpackb(payload)
-            duration = data.get('duration', DISPLAY_DEFAULT_DELAY)
-            text_type = data[b'type']
-            image_bytes = None
-            if text_type == b'1line':
-                msg = data[b'text'].decode('UTF-8')
-                # pprint(data)
-                image_bytes = self.typeset_1line(msg).tobytes()
-            elif text_type == b'3lines':
-                lines = [l.decode('UTF-8') for l in data[b'lines']]
-                image_bytes = self.typeset_3lines(lines).tobytes()
-            else:
-                print("Unknown type %s" % text_type)
-            if image_bytes is None:
-                return
+            image_bytes, duration = self.got_simple_text(payload)
+        elif topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
+            image_bytes, duration = self.got_1line_text(payload)
+        elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
+            image_bytes, duration = self.got_3lines_text(payload)
+        if image_bytes is None:
+            return
         msg = [[image_bytes, {'duration': duration}]]
         self.send_image(msg)
+
+    def got_1line_text(self, payload):
+        msg = TextSingleLineLayout().load(payload)
+        image_bytes = self.typeset_1line(msg.text).tobytes()
+        return image_bytes, msg.duration
+
+    def got_3lines_text(self, payload):
+        msg = TextTripleLinesLayout().load(payload)
+        # lines = [l.decode('UTF-8') for l in data[b'lines']]
+        image_bytes = self.typeset_3lines(msg.lines).tobytes()
+        return image_bytes, msg.duration
+
+    def got_simple_text(self, payload):
+        duration = DISPLAY_DEFAULT_DELAY
+        image_bytes = self.typeset_1line(payload[:30]).tobytes()
+        return duration, image_bytes
 
     def send_image(self, image_data):
         # print("Sending the image data:")
