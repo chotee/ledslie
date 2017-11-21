@@ -2,7 +2,7 @@ import pytest
 import msgpack
 from flask.config import Config
 
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 import ledslie.processors.scheduler
 from ledslie.processors.scheduler import Scheduler
 from ledslie.processors.messages import ImageSequence
@@ -27,7 +27,7 @@ class TestScheduler(object):
         sched.connectToBroker(protocol)
 
     def test_on_message(self, sched):
-        topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
+        topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + b"test"
         payload = self._test_sequence(sched)
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
@@ -51,15 +51,15 @@ class TestScheduler(object):
 
         sched.send_next_frame()  # Frame 0
         assert 1 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'0' * image_size) == sched.protocol._published_messages[-1]
+        assert (b'ledslie/frames/1', b'0' * image_size) == sched.protocol._published_messages[-1]
 
         sched.send_next_frame()  # Frame 1
         assert 2 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'1' * image_size) == sched.protocol._published_messages[-1]
+        assert (b'ledslie/frames/1', b'1' * image_size) == sched.protocol._published_messages[-1]
 
         sched.send_next_frame()  # Frame 2
         assert 3 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'2' * image_size) == sched.protocol._published_messages[-1]
+        assert (b'ledslie/frames/1', b'2' * image_size) == sched.protocol._published_messages[-1]
 
         sched.send_next_frame()  # End of program!
         assert 3 == len(sched.protocol._published_messages)
@@ -68,7 +68,7 @@ class TestScheduler(object):
 
     def test_sequence_wrong(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
-        topic = LEDSLIE_TOPIC_SEQUENCES + "/test"
+        topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED + b"/test"
         sequence = [
             ['666', {'duration': 100}],  # Wrong number of bytes in the image
         ]

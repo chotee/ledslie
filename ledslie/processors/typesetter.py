@@ -41,8 +41,8 @@ from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, \
-    LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
+    LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.service import GenericMQTTPubSubService, CreateService
 
@@ -91,10 +91,11 @@ class Typesetter(GenericMQTTPubSubService):
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
-        # print("Sending the image data:")
-        # pprint(data_objs)
         data = bytes(image_data)
-        topic = LEDSLIE_TOPIC_SEQUENCES
+        if image_data.program is None:
+            topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+        else:
+            topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
         self.protocol.publish(topic, data)
 
     def typeset_1line(self, msg):

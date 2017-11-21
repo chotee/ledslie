@@ -26,7 +26,6 @@ class Image(GenericMessage):
 class ImageSequence(GenericMessage):
     def __init__(self, config):
         self.config = config
-        self.program = None
         self.sequence = deque()
 
     def load(self, payload):
@@ -44,7 +43,7 @@ class ImageSequence(GenericMessage):
         return self
 
     def __bytes__(self):
-        fields = ['program']
+        fields = []
         seq_info = dict([(k, v) for k, v in self.__dict__.items() if k in fields and v is not None])
         images = [(idata, iinfo) for idata, iinfo in self.sequence]
         return msgpack.packb((images, seq_info))

@@ -20,6 +20,7 @@ from mqtt.client.factory import MQTTFactory
 
 # Global object to control globally namespace logging
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER, LEDSLIE_TOPIC_SERIALIZER
+from ledslie.processors.messages import TextSingleLineLayout
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -111,10 +112,12 @@ class MQTTService(ClientService):
 
         log.debug(" >< Starting one round of publishing >< ")
         date_str = str(datetime.now().strftime("%a %H:%M:%S"))
-        msg = msgpack.packb({b"type": b'1line', b'text': date_str})
+        msg = TextSingleLineLayout()
+        msg.text = date_str
+        msg.duration = 1000
+        msg.program = 'clock'
         # d = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, qos=1, message='\xff'*self.config.get("DISPLAY_SIZE"))
         d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER, qos=1, message=bytearray(msg))
-        # d.addErrback(_logFailure)
         return d
 
 

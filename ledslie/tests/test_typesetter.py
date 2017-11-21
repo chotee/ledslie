@@ -2,7 +2,7 @@ import msgpack
 import pytest
 
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
-    LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES
+    LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
 import ledslie.processors.typesetter
 from ledslie.processors.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
 from ledslie.processors.typesetter import Typesetter
@@ -45,6 +45,8 @@ class TestTypesetter(object):
         assert 0 == len(tsetter.protocol._published_messages)
         tsetter.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert 1 == len(tsetter.protocol._published_messages)
+        seq_topic, seq_data = tsetter.protocol._published_messages[-1]
+        assert seq_topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED
 
     def test_ledslie_typesetter_1line(self, tsetter):
         topic = LEDSLIE_TOPIC_TYPESETTER_1LINE
@@ -53,6 +55,8 @@ class TestTypesetter(object):
         assert 0 == len(tsetter.protocol._published_messages)
         tsetter.onPublish(topic, bytes(msg), qos=0, dup=False, retain=False, msgId=0)
         assert 1 == len(tsetter.protocol._published_messages)
+        seq_topic, seq_data = tsetter.protocol._published_messages[-1]
+        assert seq_topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED
 
     def test_ledslie_typesetter_3lines(self, tsetter):
         topic = LEDSLIE_TOPIC_TYPESETTER_3LINES
@@ -61,6 +65,8 @@ class TestTypesetter(object):
         assert 0 == len(tsetter.protocol._published_messages)
         tsetter.onPublish(topic, bytes(msg), qos=0, dup=False, retain=False, msgId=0)
         assert 1 == len(tsetter.protocol._published_messages)
+        seq_topic, seq_data = tsetter.protocol._published_messages[-1]
+        assert seq_topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED
 
     def test_ledslie_typesetter_fields(self, tsetter):
         topic = LEDSLIE_TOPIC_TYPESETTER_1LINE
@@ -73,7 +79,6 @@ class TestTypesetter(object):
         assert 1 == len(tsetter.protocol._published_messages)
 
         seq_topic, seq_data = tsetter.protocol._published_messages[-1]
-        assert LEDSLIE_TOPIC_SEQUENCES == seq_topic
+        assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + b"foobar") == seq_topic
         seq = ImageSequence(FakeConfig()).load(seq_data)
         assert 1000 == seq.duration
-        assert b'foobar' == seq.program

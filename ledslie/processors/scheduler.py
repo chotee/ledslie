@@ -31,7 +31,7 @@ from twisted.internet import reactor
 from twisted.logger import Logger
 
 # Global object to control globally namespace logging
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_SERIALIZER
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SERIALIZER
 from ledslie.processors.messages import ImageSequence
 from ledslie.processors.service import CreateService, GenericMQTTPubSubService
 # ----------------
@@ -74,7 +74,8 @@ class Catalog(object):
 
 class Scheduler(GenericMQTTPubSubService):
     subscriptions = (
-        (LEDSLIE_TOPIC_SEQUENCES, 1),
+        (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, 1),
+        (LEDSLIE_TOPIC_SEQUENCES_UNNAMED, 1),
     )
 
     def __init__(self, endpoint, factory, config):
@@ -96,9 +97,10 @@ class Scheduler(GenericMQTTPubSubService):
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
 
     def get_program_id(self, topic):
-        program_id = None
-        # if topic != LEDSLIE_TOPIC_SEQUENCES:
-        #     program_id = topic.split('/')[-1]
+        if topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED:
+            program_id = None
+        else:
+            program_id = topic.split(b'/')[-1]
         return program_id
 
     def send_next_frame(self):
