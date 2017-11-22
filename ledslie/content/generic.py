@@ -49,7 +49,7 @@ def setLogLevel(namespace=None, levelStr='info'):
     logLevelFilterPredicate.setLogLevelForNamespace(namespace=namespace, level=level)
 
 
-def CreateReporter(reporterCls):
+def CreateContent(reporterCls):
     startLogging()
     setLogLevel(namespace='mqtt', levelStr='debug')
     setLogLevel(namespace=reporterCls.__name__, levelStr='debug')
@@ -60,7 +60,7 @@ def CreateReporter(reporterCls):
     serv.startService()
     return serv
 
-class GenericReporter(ClientService):
+class GenericContent(ClientService):
     def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
         self.config = Config()

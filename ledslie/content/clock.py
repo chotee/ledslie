@@ -19,16 +19,13 @@ from datetime import datetime
 import os
 from twisted.internet import reactor, task
 from twisted.internet.defer import inlineCallbacks
-from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
 from ledslie.messages import TextSingleLineLayout
-from ledslie.reporters.reporter import GenericReporter, CreateReporter, setLogLevel
+from ledslie.content.generic import GenericContent, CreateContent
 
-
-class ClockReporter(GenericReporter):
-
+class ClockReporter(GenericContent):
     @inlineCallbacks
     def connectToBroker(self, protocol):
         '''
@@ -69,5 +66,5 @@ class ClockReporter(GenericReporter):
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
     Config(envvar_silent=False)
-    CreateReporter(ClockReporter)
+    CreateContent(ClockReporter)
     reactor.run()
