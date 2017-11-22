@@ -31,6 +31,7 @@ from twisted.internet import reactor
 from twisted.logger import Logger
 
 # Global object to control globally namespace logging
+from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_SERIALIZER
 from ledslie.messages import ImageSequence
@@ -120,5 +121,7 @@ class Scheduler(GenericMQTTPubSubService):
 
 
 if __name__ == '__main__':
-    log = CreateService(Scheduler)
+    log = Logger(__file__)
+    Config(envvar_silent=False)
+    CreateService(Scheduler)
     reactor.run()

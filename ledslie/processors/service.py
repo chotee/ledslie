@@ -68,8 +68,6 @@ def setLogLevel(namespace=None, levelStr='info'):
 
 
 def CreateService(ServiceCls):
-    global log
-    log = Logger()
     startLogging()
     setLogLevel(namespace='mqtt', levelStr='debug')
     setLogLevel(namespace='__main__', levelStr='debug')
@@ -77,6 +75,7 @@ def CreateService(ServiceCls):
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
     serv = ServiceCls(myEndpoint, factory)
     serv.startService()
+    return serv
 
 
 class GenericMQTTPubSubService(ClientService):

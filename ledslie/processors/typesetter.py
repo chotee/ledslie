@@ -38,6 +38,7 @@ from PIL import ImageFont
 from twisted.internet import reactor
 from twisted.logger import Logger
 
+from ledslie.config import Config
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
@@ -139,5 +140,7 @@ class Typesetter(GenericMQTTPubSubService):
 #         main()
 
 if __name__ == '__main__':
-    log = CreateService(Typesetter)
+    log = Logger(__file__)
+    Config(envvar_silent=False)
+    CreateService(Typesetter)
     reactor.run()
