@@ -64,7 +64,11 @@ class ImageSequence(GenericMessage):
 
     def next_frame(self):
         self.frame_nr += 1
-        return self.sequence[self.frame_nr]
+        try:
+            return self.sequence[self.frame_nr]
+        except IndexError:
+            self.frame_nr = -1
+            raise
 
 
 class GenericTextLayout(GenericMessage):

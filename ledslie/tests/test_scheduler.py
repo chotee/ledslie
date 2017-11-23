@@ -1,12 +1,53 @@
 import msgpack
 import pytest
-from flask.config import Config
 
 import ledslie.processors.scheduler
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 from ledslie.messages import ImageSequence
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
+from ledslie.processors.scheduler import Catalog
+
+
+class TestCatalog(object):
+    def test_init(self):
+        catalog = Catalog()
+        assert catalog.is_empty()
+        assert not catalog.has_content()
+
+        seq = ImageSequence()
+        program_id = "First"
+        seq.program = program_id
+        seq.sequence = ["Foo"]
+        catalog.add_program(program_id, seq)
+
+        assert not catalog.is_empty()
+        assert catalog.has_content()
+
+        seq = ImageSequence()
+        program_id = "Second"
+        seq.program = program_id
+        seq.sequence = ["Bar", "Quux"]
+        catalog.add_program(program_id, seq)
+
+        return catalog
+
+    def test_get_frames(self):
+        catalog = self.test_init()
+        assert "Foo" == catalog.next_frame()
+        assert "Bar" == catalog.next_frame()
+        assert "Quux" == catalog.next_frame()
+        assert "Foo" == catalog.next_frame()
+
+    def test_empty_catalog(self):
+        catalog = Catalog()
+        try:
+            catalog.next_frame()
+        except IndexError:
+            pass
+        else:
+            assert "Should not get here!"
+
 
 
 class TestScheduler(object):
@@ -44,7 +85,7 @@ class TestScheduler(object):
 
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
-        sched.catalog.add_sequence(None, ImageSequence().load(self._test_sequence(sched)))
+        sched.catalog.add_program(None, ImageSequence().load(self._test_sequence(sched)))
         assert 0 == len(sched.protocol._published_messages)
 
         sched.send_next_frame()  # Frame 0

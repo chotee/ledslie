@@ -47,7 +47,7 @@ class Catalog(object):
     def __init__(self):
         self.programs = {}
         self.active_program = None
-        self.program_sequence = []  # list of keys that indicate the sequence of programs.
+        self.program_name_list = []  # list of keys that indicate the sequence of programs.
         self.active_program_name = None
 
     def has_content(self):
@@ -57,14 +57,13 @@ class Catalog(object):
         return not self.has_content()
 
     def select_next_program(self):
-        self.active_program = self.programs[None]
-
-    def remove_program(self, program_id):
-        del self.programs[program_id]
-        # curr_program_idx = self.program_sequence.index(self.active_program_name)
-        # new_program_idx = curr_program_idx + 1
-        # self.active_program_name = self.program_sequence[]
-        # self.active_program = self.programs[self.program_sequence]
+        try:
+            active_program_idx = self.program_name_list.index(self.active_program_name)
+            next_program_name = self.program_name_list[active_program_idx+1]
+        except (ValueError, IndexError):
+            next_program_name = self.program_name_list[0]
+        self.active_program = self.programs[next_program_name]
+        self.active_program_name = next_program_name
 
     def next_frame(self):
         if self.active_program is None:
@@ -72,14 +71,13 @@ class Catalog(object):
         try:
             return self.active_program.next_frame()
         except IndexError:
-            self.remove_program(None)
             self.select_next_program()
             return self.next_frame()
 
-    def add_sequence(self, program_id, seq):
+    def add_program(self, program_id, seq):
         assert isinstance(seq, ImageSequence), "Program is not a ImageSequence but: %s" % seq
         if program_id not in self.programs:
-            self.program_sequence.append(program_id)
+            self.program_name_list.append(program_id)
         self.programs[program_id] = seq
 
 
@@ -103,7 +101,7 @@ class Scheduler(GenericMQTTPubSubService):
         seq = ImageSequence().load(payload)
         if seq is None:
             return
-        self.catalog.add_sequence(program_id, seq)
+        self.catalog.add_program(program_id, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
 
