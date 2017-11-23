@@ -122,7 +122,7 @@ class GenericMQTTPubSubService(ClientService):
             return True
         deferreds = []
         for topic, qos in self.subscriptions:
-            d = self.protocol.subscribe(topic, qos)
+            d = self.protocol.subscribe(topic.decode(), qos)
             d.addCallbacks(_logGrantedQoS, _logFailure)
             deferreds.append(d)
         return DeferredList(deferreds)

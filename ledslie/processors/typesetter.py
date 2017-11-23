@@ -78,7 +78,7 @@ class Typesetter(GenericMQTTPubSubService):
                 msg = TextTripleLinesLayout().load(payload)
                 image_bytes = self.typeset_3lines(msg.lines).tobytes()
             else:
-                raise NotImplemented(topic)
+                raise NotImplementedError(topic)
             duration = msg.duration
             program = msg.program
         if image_bytes is None:
