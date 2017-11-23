@@ -78,7 +78,7 @@ class Typesetter(GenericMQTTPubSubService):
                 msg = TextTripleLinesLayout().load(payload)
                 image_bytes = self.typeset_3lines(msg.lines).tobytes()
             else:
-                raise NotImplementedError(topic)
+                raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
             duration = msg.duration
             program = msg.program
         if image_bytes is None:
@@ -94,7 +94,7 @@ class Typesetter(GenericMQTTPubSubService):
             topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
         else:
             topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
-        self.protocol.publish(topic, data)
+        self.publish(topic, data)
 
     def typeset_1line(self, msg):
         image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),

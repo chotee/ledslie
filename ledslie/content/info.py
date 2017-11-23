@@ -33,7 +33,7 @@ class InfoReporter(GenericContent):
         self.protocol = protocol
         self.protocol.onDisconnection = self.onDisconnection
         self.protocol.setWindowSize(3)
-        self.task = task.LoopingCall(self.publish)
+        self.task = task.LoopingCall(self.publishInfo)
         self.task.start(5, now=False)
         try:
             yield self.protocol.connect(self.__class__.__name__, keepalive=60)
@@ -43,7 +43,7 @@ class InfoReporter(GenericContent):
         else:
             self.log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
 
-    def publish(self):
+    def publishInfo(self):
         def _logFailure(failure):
             self.log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
@@ -60,7 +60,7 @@ class InfoReporter(GenericContent):
         ]
         msg.duration = 5000
         msg.program = 'info'
-        d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES.decode(), qos=1, message=bytearray(bytes(msg)))
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=bytes(msg), qos=1)
         d.addCallbacks(_logAll, _logFailure)
         return d
 

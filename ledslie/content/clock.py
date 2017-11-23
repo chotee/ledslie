@@ -34,7 +34,7 @@ class ClockReporter(GenericContent):
         self.protocol = protocol
         self.protocol.onDisconnection = self.onDisconnection
         self.protocol.setWindowSize(3)
-        self.task = task.LoopingCall(self.publish)
+        self.task = task.LoopingCall(self.publishClock)
         self.task.start(1, now=False)
         try:
             yield self.protocol.connect(self.__class__.__name__, keepalive=60)
@@ -44,7 +44,7 @@ class ClockReporter(GenericContent):
         else:
             self.log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
 
-    def publish(self):
+    def publishClock(self):
         def _logFailure(failure):
             self.log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
@@ -58,7 +58,7 @@ class ClockReporter(GenericContent):
         msg.text = date_str
         msg.duration = 1000
         msg.program = 'clock'
-        d = self.protocol.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE.decode(), qos=1, message=bytearray(bytes(msg)))
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, qos=1, message=bytearray(bytes(msg)))
         d.addCallbacks(_logAll, _logFailure)
         return d
 

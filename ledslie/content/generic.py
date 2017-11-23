@@ -79,3 +79,8 @@ class GenericContent(ClientService):
         '''
         log.debug("<Connection was lost !> <reason={r}>", r=reason)
         self.whenConnected().addCallback(self.connectToBroker)
+
+    def publish(self, topic, message, qos=0, retain=False):
+        if isinstance(message, bytes):
+            message = bytearray(message)
+        return self.protocol.publish(topic, message, qos, retain=False)

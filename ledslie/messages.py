@@ -9,6 +9,11 @@ from ledslie.config import Config
 log = Logger()
 
 
+def GetString(obj, key, default=None):
+    b_value = obj.get(key, default)
+    return b_value.decode() if b_value is not None else None
+
+
 class GenericMessage(object):
     def load(self, obj_data):
         raise NotImplemented()
@@ -29,11 +34,12 @@ class Image(GenericMessage):
 class ImageSequence(GenericMessage):
     def __init__(self):
         self.sequence = deque()
+        self.program = None
 
     def load(self, payload):
         config = Config()
         seq_images, seq_info = msgpack.unpackb(payload)
-        self.program = seq_info.get(b'program', None)
+        self.program = GetString(seq_info, b'program')
         for image_data, image_info in seq_images:
             if len(image_data) != config.get('DISPLAY_SIZE'):
                 log.error("Images are of the wrong size. Ignoring.")
@@ -67,7 +73,7 @@ class GenericTextLayout(GenericMessage):
     def load(self, payload):
         obj_data = msgpack.unpackb(payload)
         self.duration = obj_data.get(b'duration', None)
-        self.program = obj_data.get(b'program', None)
+        self.program = GetString(obj_data, b'program')
         return obj_data
 
 
@@ -78,7 +84,7 @@ class TextSingleLineLayout(GenericTextLayout):
 
     def load(self, payload):
         obj_data = super(TextSingleLineLayout, self).load(payload)
-        self.text = obj_data.get(b'text', b"").decode()
+        self.text = GetString(obj_data, b'text', "")
         return self
 
     def __bytes__(self):

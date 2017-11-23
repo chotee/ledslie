@@ -122,13 +122,18 @@ class GenericMQTTPubSubService(ClientService):
             return True
         deferreds = []
         for topic, qos in self.subscriptions:
-            d = self.protocol.subscribe(topic.decode(), qos)
+            d = self.protocol.subscribe(topic, qos)
             d.addCallbacks(_logGrantedQoS, _logFailure)
             deferreds.append(d)
         return DeferredList(deferreds)
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         raise NotImplemented()
+
+    def publish(self, topic, message, qos=0, retain=False):
+        if isinstance(message, bytes):
+            message = bytearray(message)
+        return self.protocol.publish(topic, message, qos, retain=False)
 
     def _logPublishFailure(failure):
         log.debug("publisher reported {message}", message=failure.getErrorMessage())

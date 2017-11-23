@@ -115,7 +115,7 @@ class Scheduler(GenericMQTTPubSubService):
         self.sequencer = self.reactor.callLater(frame.duration, self.send_next_frame)
 
     def publish_frame(self, frame):
-        d1 = self.protocol.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))
+        d1 = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))
         d1.addErrback(self._logPublishFailure)
         return d1
 
