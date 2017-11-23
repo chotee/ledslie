@@ -133,7 +133,7 @@ class GenericMQTTPubSubService(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if isinstance(message, bytes):
             message = bytearray(message)
-        return self.protocol.publish(topic, message, qos, retain=False)
+        return self.protocol.publish(topic, message, qos, retain=retain)
 
     def _logPublishFailure(failure):
         log.debug("publisher reported {message}", message=failure.getErrorMessage())

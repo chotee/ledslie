@@ -83,4 +83,4 @@ class GenericContent(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if isinstance(message, bytes):
             message = bytearray(message)
-        return self.protocol.publish(topic, message, qos, retain=False)
+        return self.protocol.publish(topic, message, qos, retain)

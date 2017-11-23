@@ -33,8 +33,9 @@ class Image(GenericMessage):
 
 class ImageSequence(GenericMessage):
     def __init__(self):
-        self.sequence = deque()
+        self.sequence = []
         self.program = None
+        self.frame_nr = -1
 
     def load(self, payload):
         config = Config()
@@ -62,7 +63,8 @@ class ImageSequence(GenericMessage):
         return sum([i.duration for i in self.sequence])
 
     def next_frame(self):
-        return self.sequence.popleft()
+        self.frame_nr += 1
+        return self.sequence[self.frame_nr]
 
 
 class GenericTextLayout(GenericMessage):

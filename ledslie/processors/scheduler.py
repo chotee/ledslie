@@ -45,34 +45,42 @@ log = Logger()
 
 class Catalog(object):
     def __init__(self):
-        self.sequences = {}
+        self.programs = {}
         self.active_program = None
+        self.program_sequence = []  # list of keys that indicate the sequence of programs.
+        self.active_program_name = None
 
     def has_content(self):
-        return bool(self.sequences)
+        return bool(self.programs)
 
     def is_empty(self):
         return not self.has_content()
 
-    def select_active_program(self):
-        self.active_program = self.sequences[None]
+    def select_next_program(self):
+        self.active_program = self.programs[None]
 
-    def remove_program(self, program):
-        del self.sequences[None]
+    def remove_program(self, program_id):
+        del self.programs[program_id]
+        # curr_program_idx = self.program_sequence.index(self.active_program_name)
+        # new_program_idx = curr_program_idx + 1
+        # self.active_program_name = self.program_sequence[]
+        # self.active_program = self.programs[self.program_sequence]
 
     def next_frame(self):
         if self.active_program is None:
-            self.select_active_program()
+            self.select_next_program()
         try:
             return self.active_program.next_frame()
         except IndexError:
-            self.remove_program(self.active_program)
-            self.active_program = None
-            self.select_active_program()
-            self.next_frame()
+            self.remove_program(None)
+            self.select_next_program()
+            return self.next_frame()
 
     def add_sequence(self, program_id, seq):
-        self.sequences[program_id] = seq
+        assert isinstance(seq, ImageSequence), "Program is not a ImageSequence but: %s" % seq
+        if program_id not in self.programs:
+            self.program_sequence.append(program_id)
+        self.programs[program_id] = seq
 
 
 class Scheduler(GenericMQTTPubSubService):
@@ -103,7 +111,7 @@ class Scheduler(GenericMQTTPubSubService):
         if topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED:
             program_id = None
         else:
-            program_id = topic.split(b'/')[-1]
+            program_id = topic.split('/')[-1]
         return program_id
 
     def send_next_frame(self):

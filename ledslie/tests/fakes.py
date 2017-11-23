@@ -42,7 +42,7 @@ class FakeMqttProtocol(FakeProtocol):
     def subscribe(self, topic, qos=0):
         return succeed("subscribed to %s" % topic)
 
-    def publish(self, topic, message):
+    def publish(self, topic, message, qos, retain=False):
         self._published_messages.append((topic, message))
         return succeed(None)
 

@@ -64,6 +64,6 @@ class TestTypesetter(object):
         assert 1 == len(tsetter.protocol._published_messages)
 
         seq_topic, seq_data = tsetter.protocol._published_messages[-1]
-        assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + b"foobar") == seq_topic
+        assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + "foobar") == seq_topic
         seq = ImageSequence().load(seq_data)
         assert 1000 == seq.duration
