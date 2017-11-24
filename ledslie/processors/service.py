@@ -74,11 +74,11 @@ def CreateService(ServiceCls):
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER | MQTTFactory.SUBSCRIBER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
     serv = ServiceCls(myEndpoint, factory)
-    serv.startService()
+    serv.startService(ServiceCls.__name__)
     return serv
 
 
-class GenericMQTTPubSubService(ClientService):
+class GenericProcessor(ClientService):
     subscriptions = ()
 
     def __init__(self, endpoint, factory, reactor=None):
@@ -86,14 +86,14 @@ class GenericMQTTPubSubService(ClientService):
         self.reactor = _maybeGlobalReactor(reactor)
         self.config = Config()
 
-    def startService(self):
-        log.info("starting MQTT Client Subscriber Service")
+    def startService(self, name):
+        log.info("starting MQTT Client Subscriber&Publisher Service")
         # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker)
+        self.whenConnected().addCallback(self.connectToBroker, name)
         ClientService.startService(self)
 
     @inlineCallbacks
-    def connectToBroker(self, protocol):
+    def connectToBroker(self, protocol, name):
         '''
         Connect to MQTT broker
         '''
@@ -104,13 +104,17 @@ class GenericMQTTPubSubService(ClientService):
         self.stats_task = task.LoopingCall(self.publish_vital_stats)
         self.stats_task.start(5.0, now=False)
         try:
-            yield self.protocol.connect(__class__.__name__, keepalive=60)
+            yield self.protocol.connect(name, keepalive=60)
             yield self.subscribe()
         except Exception as e:
             log.error("Connecting to {broker} raised {excp!s}",
                       broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
         else:
             log.info("Connected and subscribed to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
+            self.reactor.callLater(0, self.onBrokerConnected)
+
+    def onBrokerConnected(self):
+        log.info("onBrokerConnected called")
 
     def subscribe(self):
         def _logFailure(failure):

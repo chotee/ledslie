@@ -19,30 +19,21 @@ from datetime import datetime
 import os
 from twisted.internet import reactor, task
 from twisted.internet.defer import inlineCallbacks
+from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
 from ledslie.messages import TextSingleLineLayout
 from ledslie.content.generic import GenericContent, CreateContent
 
-class ClockReporter(GenericContent):
-    @inlineCallbacks
-    def connectToBroker(self, protocol):
-        '''
-        Connect to MQTT broker
-        '''
-        self.protocol = protocol
-        self.protocol.onDisconnection = self.onDisconnection
-        self.protocol.setWindowSize(3)
+class ClockContent(GenericContent):
+    def __init__(self, endpoint, factory):
+        self.log = Logger(self.__class__.__name__)
+        super().__init__(endpoint, factory)
+
+    def onBrokerConnected(self):
         self.task = task.LoopingCall(self.publishClock)
-        self.task.start(1, now=False)
-        try:
-            yield self.protocol.connect(self.__class__.__name__, keepalive=60)
-        except Exception as e:
-            self.log.error("Connecting to {broker} raised {excp!s}",
-                      broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
-        else:
-            self.log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
+        self.task.start(1, now=True)
 
     def publishClock(self):
         def _logFailure(failure):
@@ -50,7 +41,7 @@ class ClockReporter(GenericContent):
             return failure
 
         def _logAll(*args):
-            self.log.debug("all publihing complete args={args!r}", args=args)
+            self.log.debug("all publishing complete args={args!r}", args=args)
 
         self.log.debug(" >< Starting one round of publishing >< ")
         date_str = str(datetime.now().strftime("%a %H:%M:%S"))
@@ -66,5 +57,5 @@ class ClockReporter(GenericContent):
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
     Config(envvar_silent=False)
-    CreateContent(ClockReporter)
+    CreateContent(ClockContent)
     reactor.run()

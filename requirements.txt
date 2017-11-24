@@ -5,3 +5,7 @@ msgpack-python
 pyserial
 twisted
 twisted-mqtt
+pyOpenSSL
+service_identity
+pyasn1
+pyasn1-modules

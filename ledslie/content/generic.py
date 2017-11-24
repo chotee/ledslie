@@ -3,6 +3,7 @@ import sys
 import os
 from mqtt.client.factory import MQTTFactory
 from twisted.application.internet import ClientService
+from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 from twisted.internet import reactor
 
@@ -49,28 +50,50 @@ def setLogLevel(namespace=None, levelStr='info'):
     logLevelFilterPredicate.setLogLevelForNamespace(namespace=namespace, level=level)
 
 
-def CreateContent(reporterCls):
+def CreateContent(contentCls):
     startLogging()
     setLogLevel(namespace='mqtt', levelStr='debug')
-    setLogLevel(namespace=reporterCls.__name__, levelStr='debug')
+    setLogLevel(namespace=contentCls.__name__, levelStr='debug')
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
-    serv = reporterCls(myEndpoint, factory)
-    serv.startService()
+    serv = contentCls(myEndpoint, factory)
+    serv.startService(contentCls.__name__)
     return serv
 
 class GenericContent(ClientService):
-    def __init__(self, endpoint, factory):
+    def __init__(self, endpoint, factory, reactor=None):
         super().__init__(endpoint, factory)
+        if reactor is None:
+            from twisted.internet import reactor
+        self.reactor = reactor
         self.config = Config()
-        self.log = Logger(self.__class__.__name__)
 
-    def startService(self):
-        log.info("starting MQTT Client Publisher Service")
+    def startService(self, name):
+        log.info("starting MQTT Content Publisher Service")
         # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker)
+        self.whenConnected().addCallback(self.connectToBroker, name)
         ClientService.startService(self)
+
+    @inlineCallbacks
+    def connectToBroker(self, protocol, name):
+        '''
+        Connect to MQTT broker
+        '''
+        self.protocol = protocol
+        self.protocol.onDisconnection = self.onDisconnection
+        self.protocol.setWindowSize(3)
+        try:
+            yield self.protocol.connect(name, keepalive=60)
+        except Exception as e:
+            self.log.error("Connecting to {broker} raised {excp!s}",
+                      broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
+        else:
+            self.log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
+            self.reactor.callLater(0, self.onBrokerConnected)
+
+    def onBrokerConnected(self):
+        log.info("onBrokerConnected called")
 
     def onDisconnection(self, reason):
         '''
