@@ -78,7 +78,7 @@ def CreateService(ServiceCls):
     return serv
 
 
-class GenericMQTTPubSubService(ClientService):
+class GenericProcessor(ClientService):
     subscriptions = ()
 
     def __init__(self, endpoint, factory, reactor=None):
@@ -87,7 +87,7 @@ class GenericMQTTPubSubService(ClientService):
         self.config = Config()
 
     def startService(self, name):
-        log.info("starting MQTT Client Subscriber Service")
+        log.info("starting MQTT Client Subscriber&Publisher Service")
         # invoke whenConnected() inherited method
         self.whenConnected().addCallback(self.connectToBroker, name)
         ClientService.startService(self)
@@ -111,6 +111,10 @@ class GenericMQTTPubSubService(ClientService):
                       broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
         else:
             log.info("Connected and subscribed to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
+            self.reactor.callLater(0, self.onBrokerConnected)
+
+    def onBrokerConnected(self):
+        log.info("onBrokerConnected called")
 
     def subscribe(self):
         def _logFailure(failure):

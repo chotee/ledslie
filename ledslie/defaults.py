@@ -26,5 +26,8 @@ DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
 PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 30 minutes.
 
 RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.35&lon=4.83"
-RAIN_UPDATE_FREQ = 10  # Seconds between updates
+RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 2*1000  # Mili-Seconds that the rain message is shown.
+
+INFO_UPDATE_FREQ  = 15*60  # Seconds between updates
+INFO_DISPLAY_DURATION = 2*3000  # Mili-Seconds that the rain message is shown.

@@ -17,6 +17,7 @@ import os
 
 from twisted.internet import reactor, task
 from twisted.internet.defer import inlineCallbacks
+from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.content.generic import GenericContent, CreateContent
@@ -25,23 +26,14 @@ from ledslie.messages import TextTripleLinesLayout
 
 
 class InfoContent(GenericContent):
-    @inlineCallbacks
-    def connectToBroker(self, protocol):
-        '''
-        Connect to MQTT broker
-        '''
-        self.protocol = protocol
-        self.protocol.onDisconnection = self.onDisconnection
-        self.protocol.setWindowSize(3)
+    def __init__(self, endpoint, factory):
+        self.log = Logger(self.__class__.__name__)
+        self.task = None
+        super().__init__(endpoint, factory)
+
+    def onBrokerConnected(self):
         self.task = task.LoopingCall(self.publishInfo)
-        self.task.start(5, now=False)
-        try:
-            yield self.protocol.connect(self.__class__.__name__, keepalive=60)
-        except Exception as e:
-            self.log.error("Connecting to {broker} raised {excp!s}",
-                           broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)
-        else:
-            self.log.info("Connected to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
+        self.task.start(self.config['INFO_UPDATE_FREQ'], now=True)
 
     def publishInfo(self):
         def _logFailure(failure):
@@ -58,7 +50,7 @@ class InfoContent(GenericContent):
             "https://wiki.techinc.nl/index.php/Ledslie",
             "https://github.com/techinc/ledslie",
         ]
-        msg.duration = 5000
+        msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = 'info'
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=bytes(msg), qos=1)
         d.addCallbacks(_logAll, _logFailure)

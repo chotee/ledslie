@@ -37,7 +37,7 @@ from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_SERIALIZER
 from ledslie.messages import ImageSequence
-from ledslie.processors.service import CreateService, GenericMQTTPubSubService
+from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
 # Global variables
@@ -96,7 +96,7 @@ class Catalog(object):
         self.program_name_list.remove(program_id)
 
 
-class Scheduler(GenericMQTTPubSubService):
+class Scheduler(GenericProcessor):
     subscriptions = (
         (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, 1),
         (LEDSLIE_TOPIC_SEQUENCES_UNNAMED, 1),
@@ -133,7 +133,8 @@ class Scheduler(GenericMQTTPubSubService):
         except KeyError:
             return
         self.publish_frame(frame)
-        self.sequencer = self.reactor.callLater(frame.duration, self.send_next_frame)
+        duration = min(5000, frame.duration/1000)
+        self.sequencer = self.reactor.callLater(duration, self.send_next_frame)
 
     def publish_frame(self, frame):
         d1 = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))

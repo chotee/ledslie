@@ -43,14 +43,14 @@ from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
-from ledslie.processors.service import GenericMQTTPubSubService, CreateService
+from ledslie.processors.service import GenericProcessor, CreateService
 
 log = Logger(__file__)
 
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
 
-class Typesetter(GenericMQTTPubSubService):
+class Typesetter(GenericProcessor):
     subscriptions = (
         (LEDSLIE_TOPIC_TYPESETTER_1LINE, 1),
         (LEDSLIE_TOPIC_TYPESETTER_3LINES, 1),
