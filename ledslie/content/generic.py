@@ -57,19 +57,22 @@ def CreateContent(reporterCls):
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
     serv = reporterCls(myEndpoint, factory)
-    serv.startService()
+    serv.startService(reporterCls.__name__)
     return serv
 
 class GenericContent(ClientService):
-    def __init__(self, endpoint, factory):
+    def __init__(self, endpoint, factory, reactor=None):
         super().__init__(endpoint, factory)
+        if reactor is None:
+            from twisted.internet import reactor
+        self.reactor = reactor
         self.config = Config()
         self.log = Logger(self.__class__.__name__)
 
-    def startService(self):
+    def startService(self, name):
         log.info("starting MQTT Client Publisher Service")
         # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker)
+        self.whenConnected().addCallback(self.connectToBroker, name)
         ClientService.startService(self)
 
     def onDisconnection(self, reason):

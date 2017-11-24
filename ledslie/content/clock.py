@@ -25,7 +25,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
 from ledslie.messages import TextSingleLineLayout
 from ledslie.content.generic import GenericContent, CreateContent
 
-class ClockReporter(GenericContent):
+class ClockContent(GenericContent):
     @inlineCallbacks
     def connectToBroker(self, protocol):
         '''
@@ -66,5 +66,5 @@ class ClockReporter(GenericContent):
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
     Config(envvar_silent=False)
-    CreateContent(ClockReporter)
+    CreateContent(ClockContent)
     reactor.run()

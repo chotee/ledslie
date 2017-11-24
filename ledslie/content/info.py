@@ -24,7 +24,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.messages import TextTripleLinesLayout
 
 
-class InfoReporter(GenericContent):
+class InfoContent(GenericContent):
     @inlineCallbacks
     def connectToBroker(self, protocol):
         '''
@@ -68,5 +68,5 @@ class InfoReporter(GenericContent):
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
     Config(envvar_silent=False)
-    CreateContent(InfoReporter)
+    CreateContent(InfoContent)
     reactor.run()
