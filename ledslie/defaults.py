@@ -22,3 +22,5 @@ DISPLAY_WIDTH = 144
 DISPLAY_HEIGHT = 24
 DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
+
+PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 30 minutes.

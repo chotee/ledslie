@@ -27,6 +27,8 @@ each name only the last sequence is retained. THis allows producers to provide u
 An image is simply a sequence of one frame
 """
 
+import time
+
 from twisted.internet import reactor
 from twisted.logger import Logger
 
@@ -45,10 +47,15 @@ log = Logger()
 
 class Catalog(object):
     def __init__(self):
+        self.config = Config()
         self.programs = {}
         self.active_program = None
         self.program_name_list = []  # list of keys that indicate the sequence of programs.
         self.active_program_name = None
+        self.program_moment = {}
+
+    def now(self):
+        return time.time()
 
     def has_content(self):
         return bool(self.programs)
@@ -64,6 +71,8 @@ class Catalog(object):
             next_program_name = self.program_name_list[0]
         self.active_program = self.programs[next_program_name]
         self.active_program_name = next_program_name
+        if self.now() - self.program_moment[self.active_program_name] > self.config['PROGRAM_RETIREMENT_AGE']:
+            self.remove_program(self.active_program_name)
 
     def next_frame(self):
         if self.active_program is None:
@@ -79,6 +88,12 @@ class Catalog(object):
         if program_id not in self.programs:
             self.program_name_list.append(program_id)
         self.programs[program_id] = seq
+        self.program_moment[program_id] = self.now()
+
+    def remove_program(self, program_id):
+        del self.programs[program_id]
+        del self.program_moment[program_id]
+        self.program_name_list.remove(program_id)
 
 
 class Scheduler(GenericMQTTPubSubService):

@@ -2,6 +2,7 @@ import msgpack
 import pytest
 
 import ledslie.processors.scheduler
+from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 from ledslie.messages import ImageSequence
 from ledslie.processors.scheduler import Scheduler
@@ -10,27 +11,25 @@ from ledslie.processors.scheduler import Catalog
 
 
 class TestCatalog(object):
-    def test_init(self):
-        catalog = Catalog()
+    def test_init(self, catalog=None):
+        catalog = Catalog() if catalog is None else catalog
         assert catalog.is_empty()
         assert not catalog.has_content()
 
-        seq = ImageSequence()
-        program_id = "First"
-        seq.program = program_id
-        seq.sequence = ["Foo"]
-        catalog.add_program(program_id, seq)
+        self._create_and_add_sequence(catalog, "First", ["Foo"])
 
         assert not catalog.is_empty()
         assert catalog.has_content()
 
-        seq = ImageSequence()
-        program_id = "Second"
-        seq.program = program_id
-        seq.sequence = ["Bar", "Quux"]
-        catalog.add_program(program_id, seq)
+        self._create_and_add_sequence(catalog, "Second", ["Bar", "Quux"])
 
         return catalog
+
+    def _create_and_add_sequence(self, catalog, program_id, sequence_content):
+        seq = ImageSequence()
+        seq.program = program_id
+        seq.sequence = sequence_content
+        catalog.add_program(program_id, seq)
 
     def test_get_frames(self):
         catalog = self.test_init()
@@ -48,6 +47,34 @@ class TestCatalog(object):
         else:
             assert "Should not get here!"
 
+    def test_remove_program(self):
+        catalog = self.test_init()
+        assert catalog.has_content()
+        catalog.remove_program("First")
+        catalog.remove_program("Second")
+        try: catalog.remove_program("Missing")
+        except KeyError: pass
+        else: assert False
+
+    def test_program_retire(self):
+        catalog = Catalog()
+        catalog.now = lambda: 10
+        self._create_and_add_sequence(catalog, "First", ["Foo"])
+        assert "Foo" == catalog.next_frame()  # Only foo is shown
+        assert "Foo" == catalog.next_frame()
+        catalog.now = lambda: 20  # Time passes
+        self._create_and_add_sequence(catalog, "Second", ["Bar"])
+        assert "Bar" == catalog.next_frame()
+        assert "Foo" == catalog.next_frame()
+        assert "Bar" == catalog.next_frame()
+        catalog.now = lambda: 20+Config()["PROGRAM_RETIREMENT_AGE"]
+        assert "Foo" == catalog.next_frame()  # Foo now gets retired.
+        assert "Bar" == catalog.next_frame()
+        assert "Bar" == catalog.next_frame()
+        self._create_and_add_sequence(catalog, "Second", ["Bar2"])  # "Second" got updated
+        assert "Bar2" == catalog.next_frame()
+        catalog.now = lambda: 30+Config()["PROGRAM_RETIREMENT_AGE"]
+        assert "Bar2" == catalog.next_frame()  # Still exists, because "Second" was updated.
 
 
 class TestScheduler(object):
