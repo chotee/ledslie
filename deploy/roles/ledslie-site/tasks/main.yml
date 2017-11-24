@@ -17,7 +17,17 @@
     - liblcms2-dev
     - zlib1g-dev
     - nginx
+    - libssl-dev
+    - libffi-dev
   become: yes
+
+- name: Pre-install pip and setuptools
+  pip:
+    name: "{{ item }}"
+    virtualenv: "/home/{{ ansible_user }}/pyenv"
+  with_items:
+    - setuptools>=37
+    - pip>=9
 
 - name: Install ledslie dependencies
   pip:
