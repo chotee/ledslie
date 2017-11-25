@@ -68,12 +68,14 @@ class Typesetter(GenericProcessor):
         log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
         program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
-            image_bytes = self.typeset_1line(payload[:30]).tobytes()
+            msg = TextSingleLineLayout()
+            msg.text = payload[:30]
+            image_bytes = self.typeset_1line(msg).tobytes()
             duration = DISPLAY_DEFAULT_DELAY
         else:
             if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
                 msg = TextSingleLineLayout().load(payload)
-                image_bytes = self.typeset_1line(msg.text).tobytes()
+                image_bytes = self.typeset_1line(msg).tobytes()
             elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
                 msg = TextTripleLinesLayout().load(payload)
                 image_bytes = self.typeset_3lines(msg.lines).tobytes()
@@ -102,12 +104,13 @@ class Typesetter(GenericProcessor):
         draw = ImageDraw.Draw(image)
         fontFileName = "DroidSansMono.ttf"
         font_path = self._get_font_filepath(fontFileName)
+        font_size = msg.font_size if msg.font_size is not None else self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
         try:
-            font = ImageFont.truetype(font_path, 20)
+            font = ImageFont.truetype(font_path, font_size)
         except OSError as exc:
             print("Can't find the font file '%s': %s" % (font_path, exc))
             return None
-        draw.text((0, 0), msg, 255, font=font)
+        draw.text((0, 0), msg.text, 255, font=font)
         return image
 
     def typeset_3lines(self, lines):

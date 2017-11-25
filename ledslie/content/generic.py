@@ -68,15 +68,17 @@ class GenericContent(ClientService):
             from twisted.internet import reactor
         self.reactor = reactor
         self.config = Config()
+        self._system_name = None
 
     def startService(self, name):
         log.info("starting MQTT Content Publisher Service")
         # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker, name)
+        self._system_name = name
+        self.whenConnected().addCallback(self.connectToBroker)
         ClientService.startService(self)
 
     @inlineCallbacks
-    def connectToBroker(self, protocol, name):
+    def connectToBroker(self, protocol):
         '''
         Connect to MQTT broker
         '''
@@ -84,7 +86,7 @@ class GenericContent(ClientService):
         self.protocol.onDisconnection = self.onDisconnection
         self.protocol.setWindowSize(3)
         try:
-            yield self.protocol.connect(name, keepalive=60)
+            yield self.protocol.connect(self._system_name, keepalive=60)
         except Exception as e:
             self.log.error("Connecting to {broker} raised {excp!s}",
                       broker=self.config.get('MQTT_BROKER_CONN_STRING'), excp=e)

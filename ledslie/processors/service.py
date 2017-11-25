@@ -85,15 +85,17 @@ class GenericProcessor(ClientService):
         super().__init__(endpoint, factory, retryPolicy=backoffPolicy(), clock=reactor)
         self.reactor = _maybeGlobalReactor(reactor)
         self.config = Config()
+        self._system_name = None
 
     def startService(self, name):
         log.info("starting MQTT Client Subscriber&Publisher Service")
         # invoke whenConnected() inherited method
-        self.whenConnected().addCallback(self.connectToBroker, name)
+        self.whenConnected().addCallback(self.connectToBroker)
         ClientService.startService(self)
+        self._system_name = name
 
     @inlineCallbacks
-    def connectToBroker(self, protocol, name):
+    def connectToBroker(self, protocol):
         '''
         Connect to MQTT broker
         '''
@@ -104,7 +106,7 @@ class GenericProcessor(ClientService):
         self.stats_task = task.LoopingCall(self.publish_vital_stats)
         self.stats_task.start(5.0, now=False)
         try:
-            yield self.protocol.connect(name, keepalive=60)
+            yield self.protocol.connect( self._system_name, keepalive=60)
             yield self.subscribe()
         except Exception as e:
             log.error("Connecting to {broker} raised {excp!s}",
