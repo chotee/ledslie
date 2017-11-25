@@ -43,6 +43,7 @@ from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
 log = Logger(__file__)
@@ -70,15 +71,15 @@ class Typesetter(GenericProcessor):
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
             msg = TextSingleLineLayout()
             msg.text = payload[:30]
-            image_bytes = self.typeset_1line(msg).tobytes()
+            image_bytes = self.typeset_1line(msg)
             duration = DISPLAY_DEFAULT_DELAY
         else:
             if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
                 msg = TextSingleLineLayout().load(payload)
-                image_bytes = self.typeset_1line(msg).tobytes()
+                image_bytes = self.typeset_1line(msg)
             elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
                 msg = TextTripleLinesLayout().load(payload)
-                image_bytes = self.typeset_3lines(msg.lines).tobytes()
+                image_bytes = self.typeset_3lines(msg.lines)
             else:
                 raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
             duration = msg.duration
@@ -111,25 +112,32 @@ class Typesetter(GenericProcessor):
             print("Can't find the font file '%s': %s" % (font_path, exc))
             return None
         draw.text((0, 0), msg.text, 255, font=font)
-        return image
+        return image.tobytes()
 
     def typeset_3lines(self, lines):
-        image = Image.new("L", (144, 24))
-        draw = ImageDraw.Draw(image)
-        fontFileName = "DroidSansMono.ttf"
-        font_path = self._get_font_filepath(fontFileName)
-        try:
-            font = ImageFont.truetype(font_path, 9)
-        except OSError as exc:
-            print("Can't find the font file '%s': %s" % (font_path, exc))
-            return None
-        for i, msg in enumerate(lines):
-            draw.text((0, (i*8)-2), msg, (255), font=font)
-        return image
+        display_width = self.config['DISPLAY_WIDTH']
+        maxchars = int(display_width / 9)+1
+        image = bytearray(self.config['DISPLAY_SIZE'])
+        for i, line in enumerate(lines):  # off all the lines
+            for j, c in enumerate(line[:maxchars]):  # Look at each character of a line
+                try:
+                    glyph = font8x8[ord(c)]
+                except KeyError:
+                    glyph = font8x8[ord("?")]
+                xpos = (i * display_width * 8  # Line bytes
+                        + j * 9)  # Horizontal Position in the line.
+                for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
+                    for x in range(8):  # Look at the bits
+                        if testBit(glyph_line, x) != 0:
+                            image[xpos + n * display_width + x] = 0xff
+        return bytes(image)
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
 
+def testBit(int_type, offset):
+    mask = 1 << offset
+    return (int_type & mask)
 
 # if __name__ == '__main__':
 #     if len(sys.argv) == 3 and sys.argv[1] == 'show':
