@@ -14,7 +14,7 @@ It consists of various processes that do one particular job.
 
 * [Site](ledslie/interface/site.py) is a website based on [Flask](http://flask.pocoo.org/) that users can interact with directly
 * [Serializer](ledslie/processors/serializer.py) receives raw frame-types and sends them to the display.
-* [Sequencer](ledslie/processors/sequencer.py) maintains a queue of frames and sends the next to Serializer.
+* [Sequencer](ledslie/processors/scheduler.py) maintains a queue of frames and sends the next to Serializer.
 * [Typesetter](ledslie/processors/typesetter.py) takes a text and generates the frame to be displayed. 
 
 Ledslie has various dependencies on other projects.

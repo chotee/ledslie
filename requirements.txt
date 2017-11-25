@@ -1,3 +1,5 @@
+pip>=9
+setuptools>=37
 flask
 flask_mqtt
 pillow
@@ -5,3 +7,8 @@ msgpack-python
 pyserial
 twisted
 twisted-mqtt
+treq
+pyOpenSSL
+service_identity
+pyasn1
+pyasn1-modules

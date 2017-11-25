@@ -30,11 +30,11 @@ from zlib import crc32
 import serial
 
 import paho.mqtt.client as mqtt
-from flask.config import Config
 
+from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SERIALIZER
 
-config = Config(".")
+config = Config(envvar_silent=False)
 
 serial_port = None
 
@@ -90,8 +90,6 @@ def on_message(client, userdata, mqtt_msg):
 
 
 def main():
-    config.from_object('ledslie.defaults')
-    config.from_envvar('LEDSLIE_CONFIG')
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message

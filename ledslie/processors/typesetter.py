@@ -30,119 +30,117 @@ OR
 
 # Start without arguments it's the typesetter
 # Start with arguments "show 'hello world'" and it will show you how 'hello world' will be rendered.
+import os
 
-import os, sys
-from base64 import a85encode
-
-from PIL import ImageFont
 from PIL import Image
 from PIL import ImageDraw
+from PIL import ImageFont
+from twisted.internet import reactor
+from twisted.logger import Logger
 
-from flask.config import Config
-import paho.mqtt.client as mqtt
-import msgpack
+from ledslie.config import Config
+from ledslie.defaults import DISPLAY_DEFAULT_DELAY
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
+    LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.processors.service import GenericProcessor, CreateService
 
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES, LEDSLIE_TOPIC_TYPESETTER
+log = Logger(__file__)
 
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
 
-config = Config(".")
+class Typesetter(GenericProcessor):
+    subscriptions = (
+        (LEDSLIE_TOPIC_TYPESETTER_1LINE, 1),
+        (LEDSLIE_TOPIC_TYPESETTER_3LINES, 1),
+        (LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, 1),
+    )
 
-# The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    def __init__(self, endpoint, factory):
+        super().__init__(endpoint, factory)
+        self.sequencer = None
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe(LEDSLIE_TOPIC_TYPESETTER)
+    def onPublish(self, topic, payload, qos, dup, retain, msgId):
+        '''
+        Callback Receiving messages from publisher
+        '''
+        log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
+        program = None
+        if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
+            image_bytes = self.typeset_1line(payload[:30]).tobytes()
+            duration = DISPLAY_DEFAULT_DELAY
+        else:
+            if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
+                msg = TextSingleLineLayout().load(payload)
+                image_bytes = self.typeset_1line(msg.text).tobytes()
+            elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
+                msg = TextTripleLinesLayout().load(payload)
+                image_bytes = self.typeset_3lines(msg.lines).tobytes()
+            else:
+                raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
+            duration = msg.duration
+            program = msg.program
+        if image_bytes is None:
+            return
+        seq_msg = ImageSequence()
+        seq_msg.program = program
+        seq_msg.sequence.append((image_bytes, {'duration': duration}))
+        self.send_image(seq_msg)
 
+    def send_image(self, image_data):
+        data = bytes(image_data)
+        if image_data.program is None:
+            topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+        else:
+            topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
+        self.publish(topic, data)
 
-def generate_id():
-    return a85encode(os.urandom(4)).decode("ASCII")
+    def typeset_1line(self, msg):
+        image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),
+                                self.config.get("DISPLAY_HEIGHT")))
+        draw = ImageDraw.Draw(image)
+        fontFileName = "DroidSansMono.ttf"
+        font_path = self._get_font_filepath(fontFileName)
+        try:
+            font = ImageFont.truetype(font_path, 20)
+        except OSError as exc:
+            print("Can't find the font file '%s': %s" % (font_path, exc))
+            return None
+        draw.text((0, 0), msg, 255, font=font)
+        return image
 
+    def typeset_3lines(self, lines):
+        image = Image.new("L", (144, 24))
+        draw = ImageDraw.Draw(image)
+        fontFileName = "DroidSansMono.ttf"
+        font_path = self._get_font_filepath(fontFileName)
+        try:
+            font = ImageFont.truetype(font_path, 9)
+        except OSError as exc:
+            print("Can't find the font file '%s': %s" % (font_path, exc))
+            return None
+        for i, msg in enumerate(lines):
+            draw.text((0, (i*8)-2), msg, (255), font=font)
+        return image
 
-def typeset_1line(msg):
-    image = Image.new("L", (config.get("DISPLAY_WIDTH"),
-                            config.get("DISPLAY_HEIGHT")))
-    draw = ImageDraw.Draw(image)
-    fontFileName = "DroidSansMono.ttf"
-    font_path = _get_font_filepath(fontFileName)
-    try:
-        font = ImageFont.truetype(font_path, 20)
-    except OSError as exc:
-        print("Can't find the font file '%s': %s" % (font_path, exc))
-        return None
-    draw.text((0, 0), msg, (255), font=font)
-    return image
-
-
-def typeset_3lines(lines):
-    image = Image.new("L", (144, 24))
-    draw = ImageDraw.Draw(image)
-    fontFileName = "DroidSansMono.ttf"
-    font_path = _get_font_filepath(fontFileName)
-    try:
-        font = ImageFont.truetype(font_path, 9)
-    except OSError as exc:
-        print("Can't find the font file '%s': %s" % (font_path, exc))
-        return None
-    for i, msg in enumerate(lines):
-        draw.text((0, (i*8)-2), msg, (255), font=font)
-    return image
-
-
-def _get_font_filepath(fontFileName):
-    return os.path.realpath(os.path.join(config.get("FONT_DIRECTORY"), fontFileName))
-
-
-def send_image(client, image_id, image_data):
-    data_objs = [image_id, image_data]
-    # print("Sending the image data:")
-    # pprint(data_objs)
-    data = msgpack.packb(data_objs)
-    client.publish(LEDSLIE_TOPIC_SEQUENCES, data)
-
-
-def on_message(client, userdata, mqtt_msg):
-    client.publish("ledslie/logs/typesetter", "Got message: '%s'" % mqtt_msg.payload)
-    data = msgpack.unpackb(mqtt_msg.payload)
-    text_type = data[b'type']
-    image_bytes = None
-    if text_type == b'1line':
-        msg = data[b'text'].decode('UTF-8')
-        client.publish("ledslie/logs/typesetter", "Typesetting '%s'" % msg)
-        # pprint(data)
-        image_bytes = typeset_1line(msg).tobytes()
-    elif text_type == b'3lines':
-        lines = [l.decode('UTF-8') for l in data[b'lines']]
-        image_bytes = typeset_3lines(lines).tobytes()
-    else:
-        print("Unknown type %s" % text_type)
-    if image_bytes is None:
-        return
-    send_image(client, generate_id(), [[image_bytes, {'duration': data.get('duration', 5000)}],])
+    def _get_font_filepath(self, fontFileName):
+        return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
 
 
-def main():
-    config.from_object('ledslie.defaults')
-    config.from_envvar('LEDSLIE_CONFIG')
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect(config.get('MQTT_BROKER_URL'),
-                   config.get('MQTT_BROKER_PORT'),
-                   config.get('MQTT_KEEPALIVE'))
-    client.loop_forever()
-
+# if __name__ == '__main__':
+#     if len(sys.argv) == 3 and sys.argv[1] == 'show':
+#         show_text = sys.argv[2].split(',')
+#         img = typeset_3lines(show_text)
+#         if img:
+#             img.show()
+#         else:
+#             print("No image was generated.")
+#     else:
+#         main()
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3 and sys.argv[1] == 'show':
-        show_text = sys.argv[2].split(',')
-        img = typeset_3lines(show_text)
-        if img:
-            img.show()
-        else:
-            print("No image was generated.")
-    else:
-        main()
+    log = Logger(__file__)
+    Config(envvar_silent=False)
+    CreateService(Typesetter)
+    reactor.run()

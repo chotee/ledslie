@@ -1,11 +1,11 @@
 [Unit]
-Description=Ledslie sequencer
+Description=Ledslie Information
 After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
 User={{ ansible_user }}
-ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/sequencer.py
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/content/info.py
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
 #Restart=on-failure

@@ -3,10 +3,12 @@
     src: "{{ item }}.service"
     dest: "/etc/systemd/system/{{ item }}.service"
   with_items:
-    - ledslie-sequencer
+    - ledslie-scheduler
     - ledslie-serializer
     - ledslie-typesetter
     - ledslie-clock
+    - ledslie-info
+    - ledslie-rain
   become: yes
 
 - name: Start ledslie processer services
@@ -15,10 +17,12 @@
     state: restarted
     enabled: yes
   with_items:
-    - ledslie-sequencer
+    - ledslie-scheduler
     - ledslie-serializer
     - ledslie-typesetter
     - ledslie-clock
+    - ledslie-info
+    - ledslie-rain
   become: yes
   tags:
     - update

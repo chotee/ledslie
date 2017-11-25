@@ -1,11 +1,11 @@
 [Unit]
-Description=Ledslie clock
+Description=Ledslie scheduler
 After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
 User={{ ansible_user }}
-ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/content/clock.py
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/scheduler.py
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process
 #Restart=on-failure
