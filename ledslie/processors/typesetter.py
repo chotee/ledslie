@@ -135,20 +135,11 @@ class Typesetter(GenericProcessor):
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
 
+
 def testBit(int_type, offset):
     mask = 1 << offset
     return (int_type & mask)
 
-# if __name__ == '__main__':
-#     if len(sys.argv) == 3 and sys.argv[1] == 'show':
-#         show_text = sys.argv[2].split(',')
-#         img = typeset_3lines(show_text)
-#         if img:
-#             img.show()
-#         else:
-#             print("No image was generated.")
-#     else:
-#         main()
 
 if __name__ == '__main__':
     log = Logger(__file__)

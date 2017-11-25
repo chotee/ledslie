@@ -32,4 +32,8 @@ RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 3*1000  # Mili-Seconds that the rain message is shown.
 
 INFO_UPDATE_FREQ  = 15*60  # Seconds between updates
-INFO_DISPLAY_DURATION = 4*3000  # Mili-Seconds that the rain message is shown.
+INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
+
+EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
+EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
+EVENTS_DISPLAY_DURATION = 6*1000  # Mili-seconds that information is shown.

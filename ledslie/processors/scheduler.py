@@ -133,7 +133,7 @@ class Scheduler(GenericProcessor):
         except KeyError:
             return
         self.publish_frame(frame)
-        duration = min(5000, frame.duration/1000)
+        duration = min(10, frame.duration/1000)
         self.sequencer = self.reactor.callLater(duration, self.send_next_frame)
 
     def publish_frame(self, frame):
