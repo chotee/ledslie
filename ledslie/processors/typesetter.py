@@ -116,20 +116,22 @@ class Typesetter(GenericProcessor):
 
     def typeset_3lines(self, lines):
         display_width = self.config['DISPLAY_WIDTH']
-        maxchars = int(display_width / 9)+1
-        image = bytearray(self.config['DISPLAY_SIZE'])
-        for i, line in enumerate(lines):  # off all the lines
+        maxchars = int(display_width / 9)
+        image = bytearray()
+        display_width_bytes = display_width * 8
+        for line in lines:  # off all the lines
+            line_image = bytearray(display_width_bytes)
             for j, c in enumerate(line[:maxchars]):  # Look at each character of a line
                 try:
                     glyph = font8x8[ord(c)]
                 except KeyError:
                     glyph = font8x8[ord("?")]
-                xpos = (i * display_width * 8  # Line bytes
-                        + j * 9)  # Horizontal Position in the line.
+                xpos = j*9  # Horizontal Position in the line.
                 for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
                     for x in range(8):  # Look at the bits
                         if testBit(glyph_line, x) != 0:
-                            image[xpos + n * display_width + x] = 0xff
+                            line_image[xpos + n * display_width + x] = 0xff
+            image.extend(line_image)
         return bytes(image)
 
     def _get_font_filepath(self, fontFileName):
