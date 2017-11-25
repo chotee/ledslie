@@ -55,11 +55,11 @@ class RainContent(GenericContent):
             for rain, t in data:
                 if rain > 0:
                     return "Rain at %s" % t
-            return "Dry until %s" % data[-1][1]
+            return "Dry for a while"
         else:  # It's raining.
             for rain, t in data:
                 if rain == 0:
-                    return "Rain stops: %s" % t
+                    return "Rain stop %s" % t
             return "Rain Rain Rain"
 
     def grab_http_response(self, response):
@@ -84,6 +84,7 @@ class RainContent(GenericContent):
         msg.text = forcast_string
         msg.duration = self.config["RAIN_DISPLAY_DURATION"]
         msg.program = 'rain'
+        msg.font_size = 15
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=bytes(msg), qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d

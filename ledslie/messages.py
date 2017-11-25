@@ -87,10 +87,12 @@ class TextSingleLineLayout(GenericTextLayout):
     def __init__(self):
         super().__init__()
         self.text = ""
+        self.font_size = None
 
     def load(self, payload):
         obj_data = super(TextSingleLineLayout, self).load(payload)
         self.text = GetString(obj_data, b'text', "")
+        self.font_size = obj_data.get(b'font_size', None)
         return self
 
     def __bytes__(self):

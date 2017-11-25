@@ -15,7 +15,7 @@ class TestRain(object):
             [0, '00:05'],
             [0, '00:10'],
         ]
-        assert "Dry until 00:10" == rain.create_forcast(data)
+        assert "Dry for a while" == rain.create_forcast(data)
 
         data = [
             [0, '00:00'],
@@ -30,7 +30,7 @@ class TestRain(object):
             [0  , '00:10'],
             [50 , '00:15'],
         ]
-        assert "Rain stops: 00:10" == rain.create_forcast(data)
+        assert "Rain stop 00:10" == rain.create_forcast(data)
 
         data = [
             [100, '00:00'],

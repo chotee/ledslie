@@ -67,3 +67,12 @@ class TestTypesetter(object):
         assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + "foobar") == seq_topic
         seq = ImageSequence().load(seq_data)
         assert 1000 == seq.duration
+
+    def test_font_size(self, monkeypatch, tsetter):
+        msg = TextSingleLineLayout()
+        msg.font_size = 13
+        msg.text = "lala"
+        def typetype(font_path, font_size):
+            assert font_size == 13
+        monkeypatch.setattr("PIL.ImageFont.truetype", typetype)
+        tsetter.typeset_1line(msg)
