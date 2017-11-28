@@ -48,15 +48,33 @@
         <li>Use the mqtt broker at <b>ledslie.ti:1883</b>. Topics are
             <a href="https://github.com/techinc/ledslie/blob/master/ledslie/definitions.py">on github</a></li>
         <ol>
-        <li>Send a text to LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT</li>
-        <li>Send JSON to the mqtt broker. The JSON response to the web interface is what
-            you'll need to submit to LEDSLIE_TOPIC_TYPESETTER_1LINE or LEDSLIE_TOPIC_TYPESETTER_3LINES</li>
-        <li>Post Raw bytes of the images to LEDSLIE_TOPIC_SERIALIZER. One byte per pixel, right and down, 0x00 is black,
-            0xFF is 100% brightess (you didn't see that coming, now did you?!)</li>
+            <li>Send a text to LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT</li>
+            <li>Send JSON with text to the mqtt broker. The JSON response to the web interface is what
+                you'll need to submit to LEDSLIE_TOPIC_TYPESETTER_1LINE or LEDSLIE_TOPIC_TYPESETTER_3LINES</li>
+            <li>Send a full program to the scheduler. This is a JSON with a list of frames+map of data. You can send
+                these to LEDSLIE_TOPIC_SEQUENCES_UNNAMED or LEDSLIE_TOPIC_SEQUENCES_PROGRAMS+replacing the + with your
+                program's name. For example create program "test" we send to topic "ledslie/sequences/1/test":
+                <pre>
+[
+    [
+        [" -- bytes of frame 1 -- ", {"duration": 20}],
+        [" -- bytes of frame 2 -- ", {"duration": 30}]
+                    ...
+        [" -- bytes of frame N -- ", {"duration": X}]
+    ], {}
+]
+                </pre>
+            </li>
+            <li>Post Raw bytes of the images to LEDSLIE_TOPIC_SERIALIZER. One byte per pixel, right and down, 0x00 is black,
+                0xFF is 100% brightess (you didn't see that coming, now did you?!)</li>
         </ol>
     </ol>
 
     </div>
+    <h2>About the program scheduler</h2>
+    <div>There's a scheduler function that picks which one to show from the catalog with all the programs. When submitting a program,
+    it gets put into the catalog and shown repeatedly. Sending programs with an existing program-name replaces them.
+    Programs age. If no update was received for a number of minutes (defaults to 30) they get removed from the catalog.</div>
     <hr/>
     <div class="footer">
         <a href="https://wiki.techinc.nl/index.php/Ledslie">Ledslie Project page</a>
