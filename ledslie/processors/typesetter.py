@@ -83,7 +83,7 @@ class Typesetter(GenericProcessor):
                 raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
             duration = msg.duration
             program = msg.program
-        if image_bytes is None:
+        if image_bytes is None or "":
             return
         seq_msg = ImageSequence()
         seq_msg.program = program
