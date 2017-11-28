@@ -1,7 +1,7 @@
-from collections import deque
+import base64
+import json
 
-import msgpack
-
+import binascii
 from twisted.logger import Logger
 
 from ledslie.config import Config
@@ -10,8 +10,15 @@ log = Logger()
 
 
 def GetString(obj, key, default=None):
-    b_value = obj.get(key, default)
-    return b_value.decode() if b_value is not None else None
+    return obj.get(key, default)
+
+
+def SerializeFrame(frame: bytes) -> str:
+    return base64.encodebytes(frame).decode('ascii')
+
+
+def DeserializeFrame(encoded_frame: str) -> bytes:
+    return base64.decodebytes(encoded_frame.encode('ascii'))
 
 
 class GenericMessage(object):
@@ -19,7 +26,10 @@ class GenericMessage(object):
         raise NotImplemented()
 
     def __bytes__(self):
-        raise NotImplemented()
+        raise NotImplemented("Deprecated")
+
+    def serialize(self):
+        return bytearray(json.dumps(self.__dict__), 'utf-8')
 
 
 class Image(GenericMessage):
@@ -27,9 +37,11 @@ class Image(GenericMessage):
         self.img_data = img_data
         self.duration = duration
 
-    def __bytes__(self):
-        return self.img_data
+    def serialize(self):
+        return SerializeFrame(self.img_data)
 
+    def raw(self):
+        return self.img_data
 
 class ImageSequence(GenericMessage):
     def __init__(self):
@@ -37,26 +49,31 @@ class ImageSequence(GenericMessage):
         self.program = None
         self.frame_nr = -1
 
-    def load(self, payload):
+    def load(self, payload: bytearray):
         config = Config()
-        seq_images, seq_info = msgpack.unpackb(payload)
+        seq_images, seq_info = json.loads(payload.decode())
         self.program = GetString(seq_info, b'program')
-        for image_data, image_info in seq_images:
+        for image_data_encoded, image_info in seq_images:
+            try:
+                image_data = DeserializeFrame(image_data_encoded)
+            except binascii.Error:
+                return
             if len(image_data) != config.get('DISPLAY_SIZE'):
-                log.error("Images are of the wrong size. Ignoring.")
+                log.error("Frame is of the wrong length %d, expected %d. Ignoring." % (
+                    len(image_data), config.get('DISPLAY_SIZE')))
                 return
             try:
-                image_duration = image_info.get(b'duration', config['DISPLAY_DEFAULT_DELAY'])
+                image_duration = image_info.get('duration', config['DISPLAY_DEFAULT_DELAY'])
             except KeyError:
                 break
             self.sequence.append(Image(image_data, duration=image_duration))
         return self
 
-    def __bytes__(self):
+    def serialize(self):
         fields = []
         seq_info = dict([(k, v) for k, v in self.__dict__.items() if k in fields and v is not None])
-        images = [(idata, iinfo) for idata, iinfo in self.sequence]
-        return msgpack.packb((images, seq_info))
+        images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.sequence]
+        return bytearray(json.dumps((images, seq_info)), 'utf-8')
 
     @property
     def duration(self):
@@ -77,9 +94,9 @@ class GenericTextLayout(GenericMessage):
         self.duration = None
 
     def load(self, payload):
-        obj_data = msgpack.unpackb(payload)
-        self.duration = obj_data.get(b'duration', None)
-        self.program = GetString(obj_data, b'program')
+        obj_data = json.loads(payload.decode())
+        self.duration = obj_data.get('duration', None)
+        self.program = GetString(obj_data, 'program')
         return obj_data
 
 
@@ -91,12 +108,9 @@ class TextSingleLineLayout(GenericTextLayout):
 
     def load(self, payload):
         obj_data = super(TextSingleLineLayout, self).load(payload)
-        self.text = GetString(obj_data, b'text', "")
-        self.font_size = obj_data.get(b'font_size', None)
+        self.text = GetString(obj_data, 'text', "")
+        self.font_size = obj_data.get('font_size', None)
         return self
-
-    def __bytes__(self):
-        return msgpack.packb(self.__dict__)
 
 
 class TextTripleLinesLayout(GenericTextLayout):
@@ -106,8 +120,5 @@ class TextTripleLinesLayout(GenericTextLayout):
 
     def load(self, payload):
         obj_data = super(TextTripleLinesLayout, self).load(payload)
-        self.lines = [l.decode() for l in obj_data.get(b'lines', [])]
+        self.lines = obj_data.get('lines', [])
         return self
-
-    def __bytes__(self):
-        return msgpack.packb(self.__dict__)

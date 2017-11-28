@@ -2,7 +2,7 @@ from flask import Config as FlaskConfig
 
 _Config_instance = None
 
-def Config(envvar_silent=True):
+def Config(envvar_silent=True) -> FlaskConfig:
     global  _Config_instance
     if _Config_instance is None:
         _Config_instance = FlaskConfig('.')

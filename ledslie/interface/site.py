@@ -17,7 +17,7 @@
 """
 
 from PIL import Image, ImageSequence
-import msgpack
+import json
 
 from werkzeug.exceptions import UnsupportedMediaType
 from flask import Flask, render_template, request, json, Response
@@ -36,7 +36,7 @@ def index():
 
 
 def send_image(sequence):
-    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES_UNNAMED, msgpack.packb(sequence))
+    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES_UNNAMED, json.dumps(sequence))
 
 
 @app.route('/gif', methods=['POST'])
@@ -65,7 +65,7 @@ def text1():
     set_data = {
         'text': text,
         'duration': duration}
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_1LINE, msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_1LINE, json.dumps(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 
@@ -77,7 +77,7 @@ def text3():
         'lines': lines,
         'duration': duration
     }
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, msgpack.packb(set_data))
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, json.dumps(set_data))
     return Response(json.dumps(set_data), mimetype='application/json')
 
 

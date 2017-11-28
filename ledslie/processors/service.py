@@ -27,6 +27,7 @@ from twisted.logger import Logger, LogLevel, globalLogBeginner, textFileLogObser
     FilteringLogObserver, LogLevelFilterPredicate
 
 from ledslie.config import Config
+from ledslie.messages import GenericMessage
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -85,6 +86,7 @@ class GenericProcessor(ClientService):
         super().__init__(endpoint, factory, retryPolicy=backoffPolicy(), clock=reactor)
         self.reactor = _maybeGlobalReactor(reactor)
         self.config = Config()
+        self.protocol = None
         self._system_name = None
 
     def startService(self, name):
@@ -139,9 +141,11 @@ class GenericProcessor(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if isinstance(message, bytes):
             message = bytearray(message)
+        elif isinstance(message, GenericMessage):
+            message = message.serialize()
         return self.protocol.publish(topic, message, qos, retain=retain)
 
-    def _logPublishFailure(failure):
+    def _logPublishFailure(self, failure):
         log.debug("publisher reported {message}", message=failure.getErrorMessage())
         return failure
 

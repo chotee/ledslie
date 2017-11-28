@@ -137,7 +137,7 @@ class Scheduler(GenericProcessor):
         self.sequencer = self.reactor.callLater(duration, self.send_next_frame)
 
     def publish_frame(self, frame):
-        d1 = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=bytes(frame))
+        d1 = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=frame.raw())
         d1.addErrback(self._logPublishFailure)
         return d1
 

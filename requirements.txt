@@ -3,7 +3,6 @@ setuptools>=37
 flask
 flask_mqtt
 pillow
-msgpack-python
 pyserial
 twisted
 twisted-mqtt

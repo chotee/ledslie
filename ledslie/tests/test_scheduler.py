@@ -1,10 +1,11 @@
-import msgpack
 import pytest
+
+import json
 
 import ledslie.processors.scheduler
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
-from ledslie.messages import ImageSequence
+from ledslie.messages import ImageSequence, SerializeFrame, DeserializeFrame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
 from ledslie.processors.scheduler import Catalog
@@ -103,12 +104,12 @@ class TestScheduler(object):
         sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')
         image_sequence = [
-            ['0' * image_size, {'duration': 100}],
-            ['1' * image_size, {'duration': 100}],
-            ['2' * image_size, {'duration': 100}],
+            [SerializeFrame(b'0' * image_size), {'duration': 100}],
+            [SerializeFrame(b'1' * image_size), {'duration': 100}],
+            [SerializeFrame(b'2' * image_size), {'duration': 100}],
         ]
-        payload = msgpack.packb([image_sequence, sequence_info])
-        return payload
+        payload = json.dumps([image_sequence, sequence_info])
+        return payload.encode()
 
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
@@ -117,15 +118,18 @@ class TestScheduler(object):
 
         sched.send_next_frame()  # Frame 0
         assert 1 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'0' * image_size) == sched.protocol._published_messages[-1]
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'0' * image_size == sched.protocol._published_messages[-1][1]
 
         sched.send_next_frame()  # Frame 1
         assert 2 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'1' * image_size) == sched.protocol._published_messages[-1]
-        #
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'1' * image_size == sched.protocol._published_messages[-1][1]
+
         sched.send_next_frame()  # Frame 2
         assert 3 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'2' * image_size) == sched.protocol._published_messages[-1]
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'2' * image_size == sched.protocol._published_messages[-1][1]
         #
         sched.send_next_frame()  # End of program!
         # assert 3 == len(sched.protocol._published_messages)
@@ -138,15 +142,15 @@ class TestScheduler(object):
         sequence = [
             ['666', {'duration': 100}],  # Wrong number of bytes in the image
         ]
-        payload = msgpack.packb([sequence, {}])
+        payload = json.dumps([sequence, {}]).encode()
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.is_empty()
 
         sequence = [
-            ['0'*image_size, {}],  # No duration information, will default to the standard one.
+            [SerializeFrame(b'0'*image_size), {}],  # No duration information, will default to the standard one.
         ]
-        payload = msgpack.packb([sequence, {}])
+        payload = json.dumps([sequence, {}]).encode()
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.has_content()

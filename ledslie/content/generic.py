@@ -68,6 +68,7 @@ class GenericContent(ClientService):
             from twisted.internet import reactor
         self.reactor = reactor
         self.config = Config()
+        self.protocol = None
         self._system_name = None
 
     def startService(self, name):
@@ -106,6 +107,6 @@ class GenericContent(ClientService):
         self.whenConnected().addCallback(self.connectToBroker)
 
     def publish(self, topic, message, qos=0, retain=False):
-        if isinstance(message, bytes):
-            message = bytearray(message)
+        if hasattr(message, 'serialize'):
+            message = message.serialize()
         return self.protocol.publish(topic, message, qos, retain)

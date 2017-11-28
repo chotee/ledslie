@@ -1,6 +1,9 @@
+import pytest
+
 from datetime import date, timedelta
 
 from ledslie.content.events import create_date_string, EventsContent
+from ledslie.tests.fakes import FakeMqttProtocol
 
 
 def test_create_date_string():
@@ -27,10 +30,16 @@ def test_create_date_string():
 
 
 class TestEventsContent(object):
-    def test_create_event_info(self):
+
+    @pytest.fixture
+    def events(self) -> EventsContent:
         endpoint = None
         factory = None
         events = EventsContent(endpoint, factory)
+        events.connectToBroker(FakeMqttProtocol())
+        return events
+
+    def test_create_event_info(self, events):
         data = [
             ['ctf', date(2017, 11, 26)],  # Tomorrow
             ['social', date(2017, 11, 29)],  # Wednesday
@@ -43,3 +52,6 @@ class TestEventsContent(object):
             'Sat 02: boardgames',
         ]
         assert result == events.create_event_info(data, now=date(2017, 11, 25))
+
+    def test_publish_events(self, events: EventsContent):
+        events.publish_events(["One", "Two", "Three"])

@@ -52,7 +52,7 @@ class InfoContent(GenericContent):
         ]
         msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = 'info'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=bytes(msg), qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, _logFailure)
         return d
 

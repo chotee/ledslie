@@ -46,8 +46,6 @@ from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageS
 from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
-log = Logger(__file__)
-
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
 
@@ -59,6 +57,7 @@ class Typesetter(GenericProcessor):
     )
 
     def __init__(self, endpoint, factory):
+        self.log = Logger(__class__.__name__)
         super().__init__(endpoint, factory)
         self.sequencer = None
 
@@ -66,7 +65,7 @@ class Typesetter(GenericProcessor):
         '''
         Callback Receiving messages from publisher
         '''
-        log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
+        self.log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
         program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
             msg = TextSingleLineLayout()
@@ -92,12 +91,11 @@ class Typesetter(GenericProcessor):
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
-        data = bytes(image_data)
         if image_data.program is None:
             topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
         else:
             topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
-        self.publish(topic, data)
+        self.publish(topic, image_data)
 
     def typeset_1line(self, msg):
         image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),
@@ -144,7 +142,6 @@ def testBit(int_type, offset):
 
 
 if __name__ == '__main__':
-    log = Logger(__file__)
     Config(envvar_silent=False)
     CreateService(Typesetter)
     reactor.run()

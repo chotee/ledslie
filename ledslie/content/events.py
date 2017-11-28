@@ -19,6 +19,8 @@ import os
 import bs4
 from dateutil.parser import parser as date_parser
 from datetime import date, datetime
+
+from twisted.internet.defer import Deferred
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
@@ -88,14 +90,14 @@ class EventsContent(GenericContent):
             events.append([name, date])
         return events
 
-    def publish_events(self, event_lines):
+    def publish_events(self, event_lines: list) -> Deferred:
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
         msg = TextTripleLinesLayout()
         msg.lines = event_lines
         msg.duration = self.config["EVENTS_DISPLAY_DURATION"]
         msg.program = 'events'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=bytes(msg), qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
 
