@@ -9,7 +9,7 @@
 </head>
 <body>
     <h1>Ledslie</h1>
-    <div>Text: POST to /text<br/>
+    <div>Create a single line of text<br/>
     <form action="/text" method="post">
         <div><label for="text">Text</label><input type="text" name="text" value="Your text" id="text"/></div>
         <div><label for="duration">Duration (ms)</label><input type="number" name="duration" value="3000" id="duration"/></div>
@@ -19,7 +19,7 @@
     </form>
     </div>
     <hr/>
-    <div>Text: POST to /text3<br/>
+    <div>Create three lines of text<br/>
     <form action="/text3" method="post">
         <div><label for="l1">Line 1</label><input type="text" name="l1" value="Line1" id="l1"/></div>
         <div><label for="l2">Line 2</label><input type="text" name="l2" value="Line2" id="l2"/></div>
@@ -38,8 +38,9 @@
     </form>
     </div>
     <hr/>
-    <h2>How to use</h2>
-    <ol>
+     <h2>How to use</h2>
+    From easy to more involved, this is how you can integrate with the display.
+    <ul>
         <li>Use this website (duh!)</li>
         <li>Post to the webserver. Check the forms for how. Posted images will be converted to 144x24 ~6bit grayscale, so YMMV.
             Here's a gif cli example to post an (animated) gif.
@@ -47,7 +48,7 @@
         </li>
         <li>Use the mqtt broker at <b>ledslie.ti:1883</b>. Topics are
             <a href="https://github.com/techinc/ledslie/blob/master/ledslie/definitions.py">on github</a></li>
-        <ol>
+        <li><ul>
             <li>Send a text to LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT</li>
             <li>Send JSON with text to the mqtt broker. The JSON response to the web interface is what
                 you'll need to submit to LEDSLIE_TOPIC_TYPESETTER_1LINE or LEDSLIE_TOPIC_TYPESETTER_3LINES</li>
@@ -67,9 +68,11 @@
             </li>
             <li>Post Raw bytes of the images to LEDSLIE_TOPIC_SERIALIZER. One byte per pixel, right and down, 0x00 is black,
                 0xFF is 100% brightess (you didn't see that coming, now did you?!)</li>
-        </ol>
-    </ol>
-
+        </ul></li>
+    </ul>
+    To get examples of usage, you can subscript to the 'ledslie/#' topics:
+    <pre>$ mosquitto_sub -h ledslie.ti -v -t 'ledslie/#' -T ledslie/frames/#</pre>
+    The "-T ledslie/frames/#" option suppresses displaying the binary frames being send to the serializer.
     </div>
     <h2>About the program scheduler</h2>
     <div>There's a scheduler function that picks which one to show from the catalog with all the programs. When submitting a program,
