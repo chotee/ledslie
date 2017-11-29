@@ -32,7 +32,7 @@ class GenericMessage(object):
         return bytearray(json.dumps(self.__dict__), 'utf-8')
 
 
-class Image(GenericMessage):
+class Frame(GenericMessage):
     def __init__(self, img_data, duration):
         self.img_data = img_data
         self.duration = duration
@@ -43,9 +43,10 @@ class Image(GenericMessage):
     def raw(self):
         return self.img_data
 
-class ImageSequence(GenericMessage):
+
+class FrameSequence(GenericMessage):
     def __init__(self):
-        self.sequence = []
+        self.frames = []
         self.program = None
         self.frame_nr = -1
 
@@ -66,26 +67,35 @@ class ImageSequence(GenericMessage):
                 image_duration = image_info.get('duration', config['DISPLAY_DEFAULT_DELAY'])
             except KeyError:
                 break
-            self.sequence.append(Image(image_data, duration=image_duration))
+            self.frames.append(Frame(image_data, duration=image_duration))
         return self
 
     def serialize(self):
         fields = []
         seq_info = dict([(k, v) for k, v in self.__dict__.items() if k in fields and v is not None])
-        images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.sequence]
+        images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.frames]
         return bytearray(json.dumps((images, seq_info)), 'utf-8')
 
     @property
     def duration(self):
-        return sum([i.duration for i in self.sequence])
+        return sum([i.duration for i in self.frames])
 
     def next_frame(self):
         self.frame_nr += 1
         try:
-            return self.sequence[self.frame_nr]
+            return self.frames[self.frame_nr]
         except IndexError:
             self.frame_nr = -1
             raise
+
+    def add_frame(self, frame):
+        self.frames.append(frame)
+
+    def __len__(self):
+        return len(self.frames)
+
+    def __getitem__(self, nr):
+        return self.frames[nr]
 
 
 class GenericTextLayout(GenericMessage):

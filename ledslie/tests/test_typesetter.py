@@ -3,7 +3,7 @@ import pytest
 import ledslie.processors.typesetter
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
     LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
-from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence
 from ledslie.processors.service import Config
 from ledslie.processors.typesetter import Typesetter
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
@@ -68,7 +68,7 @@ class TestTypesetter(object):
 
         seq_topic, seq_data = tsetter.protocol._published_messages[-1]
         assert (LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + "foobar") == seq_topic
-        seq = ImageSequence().load(seq_data)
+        seq = FrameSequence().load(seq_data)
         assert 1000 == seq.duration
 
     def test_font_size(self, monkeypatch, tsetter):

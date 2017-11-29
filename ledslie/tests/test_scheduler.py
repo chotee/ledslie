@@ -5,10 +5,10 @@ import json
 import ledslie.processors.scheduler
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
-from ledslie.messages import ImageSequence, SerializeFrame, DeserializeFrame
+from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-from ledslie.processors.scheduler import Catalog
+from ledslie.processors.scheduler import Catalog, AnimateStill
 
 
 class TestCatalog(object):
@@ -27,9 +27,9 @@ class TestCatalog(object):
         return catalog
 
     def _create_and_add_sequence(self, catalog, program_id, sequence_content):
-        seq = ImageSequence()
+        seq = FrameSequence()
         seq.program = program_id
-        seq.sequence = sequence_content
+        seq.frames = sequence_content
         catalog.add_program(program_id, seq)
 
     def test_get_frames(self):
@@ -113,7 +113,7 @@ class TestScheduler(object):
 
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
-        sched.catalog.add_program(None, ImageSequence().load(self._test_sequence(sched)))
+        sched.catalog.add_program(None, FrameSequence().load(self._test_sequence(sched)))
         assert 0 == len(sched.protocol._published_messages)
 
         sched.send_next_frame()  # Frame 0
@@ -154,3 +154,11 @@ class TestScheduler(object):
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.has_content()
+
+    def test_AnimateStill(self, sched):
+        seq = FrameSequence()
+        img_data = bytes(bytearray(Config().get('DISPLAY_SIZE')))
+        seq.add_frame(Frame(img_data, 2000))
+        animated_seq = AnimateStill(seq)
+        assert Config().get('DISPLAY_HEIGHT') == len(animated_seq)
+        assert sum([frame.duration for frame in animated_seq.frames])

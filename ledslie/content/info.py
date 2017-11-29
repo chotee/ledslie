@@ -47,8 +47,8 @@ class InfoContent(GenericContent):
         msg = TextTripleLinesLayout()
         msg.lines = [
             "Ledslie © GNU-AGPL3 ~ ;-)",
+            "http://ledslie.ti",
             "https://wiki.techinc.nl/index.php/Ledslie",
-            "https://github.com/techinc/ledslie",
         ]
         msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = 'info'

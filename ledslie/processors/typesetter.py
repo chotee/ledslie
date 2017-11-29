@@ -42,7 +42,7 @@ from ledslie.config import Config
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence
 from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
@@ -85,9 +85,9 @@ class Typesetter(GenericProcessor):
             program = msg.program
         if image_bytes is None or "":
             return
-        seq_msg = ImageSequence()
+        seq_msg = FrameSequence()
         seq_msg.program = program
-        seq_msg.sequence.append((image_bytes, {'duration': duration}))
+        seq_msg.frames.append((image_bytes, {'duration': duration}))
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
