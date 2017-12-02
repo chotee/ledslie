@@ -81,13 +81,12 @@ class Typesetter(GenericProcessor):
                 image_bytes = self.typeset_3lines(msg.lines)
             else:
                 raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
-            duration = msg.duration
-            program = msg.program
         if image_bytes is None or "":
             return
         seq_msg = FrameSequence()
-        seq_msg.program = program
-        seq_msg.frames.append((image_bytes, {'duration': duration}))
+        seq_msg.program = msg.program
+        seq_msg.valid_time = msg.valid_time
+        seq_msg.frames.append((image_bytes, {'duration': msg.duration}))
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
