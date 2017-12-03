@@ -27,7 +27,7 @@ TYPESETTER_1LINE_DEFAULT_FONT_SIZE = 20
 
 PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 30 minutes.
 
-RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.35&lon=4.83"
+RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.34557&lon=4.82647"
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 3*1000  # Mili-Seconds that the rain message is shown.
 
@@ -37,3 +37,7 @@ INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
 EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
 EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
 EVENTS_DISPLAY_DURATION = 6*1000  # Mili-seconds that information is shown.
+
+MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
+MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.
+MIDNIGHT_FONT_SIZE        = 16      # Font-size of the message

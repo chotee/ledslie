@@ -66,7 +66,7 @@ class Catalog(object):
         self.active_program = None
         self.program_name_list = []  # list of keys that indicate the sequence of programs.
         self.active_program_name = None
-        self.program_moment = {}
+        self.program_retirement = {}
 
     def now(self):
         return time.time()
@@ -85,7 +85,7 @@ class Catalog(object):
             next_program_name = self.program_name_list[0]
         self.active_program = self.programs[next_program_name]
         self.active_program_name = next_program_name
-        if self.now() - self.program_moment[self.active_program_name] > self.config['PROGRAM_RETIREMENT_AGE']:
+        if self.now() > self.program_retirement[self.active_program_name]:
             self.remove_program(self.active_program_name)
 
     def next_frame(self):
@@ -102,11 +102,15 @@ class Catalog(object):
         if program_id not in self.programs:
             self.program_name_list.append(program_id)
         self.programs[program_id] = seq
-        self.program_moment[program_id] = self.now()
+        if seq.valid_time:
+            retirement_age = min(seq.valid_time, self.config['PROGRAM_RETIREMENT_AGE'])
+        else:
+            retirement_age = self.config['PROGRAM_RETIREMENT_AGE']
+        self.program_retirement[program_id] = self.now() + retirement_age
 
     def remove_program(self, program_id):
         del self.programs[program_id]
-        del self.program_moment[program_id]
+        del self.program_retirement[program_id]
         self.program_name_list.remove(program_id)
 
 

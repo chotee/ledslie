@@ -9,6 +9,7 @@
     - ledslie-clock
     - ledslie-info
     - ledslie-rain
+    - ledslie-midnight
   become: yes
 
 - name: Start ledslie processer services
@@ -22,7 +23,7 @@
     - ledslie-typesetter
     - ledslie-clock
     - ledslie-info
-    - ledslie-rain
+    - ledslie-midnight
   become: yes
   tags:
     - update

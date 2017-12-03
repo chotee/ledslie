@@ -9,10 +9,6 @@ from ledslie.config import Config
 log = Logger()
 
 
-def GetString(obj, key, default=None):
-    return obj.get(key, default)
-
-
 def SerializeFrame(frame: bytes) -> str:
     return base64.encodebytes(frame).decode('ascii')
 
@@ -32,6 +28,16 @@ class GenericMessage(object):
         return bytearray(json.dumps(self.__dict__), 'utf-8')
 
 
+class GenericProgram(GenericMessage):
+    def __init__(self):
+        self.program = None
+        self.valid_time = None
+
+    def load(self, prog_data):
+        self.program = prog_data.get('program', None)
+        self.valid_time = prog_data.get('valid_time', None)
+
+
 class Frame(GenericMessage):
     def __init__(self, img_data, duration):
         self.img_data = img_data
@@ -44,16 +50,16 @@ class Frame(GenericMessage):
         return self.img_data
 
 
-class FrameSequence(GenericMessage):
+class FrameSequence(GenericProgram):
     def __init__(self):
+        super().__init__()
         self.frames = []
-        self.program = None
         self.frame_nr = -1
 
     def load(self, payload: bytearray):
         config = Config()
         seq_images, seq_info = json.loads(payload.decode())
-        self.program = GetString(seq_info, b'program')
+        super().load(seq_info)
         for image_data_encoded, image_info in seq_images:
             try:
                 image_data = DeserializeFrame(image_data_encoded)
@@ -71,10 +77,8 @@ class FrameSequence(GenericMessage):
         return self
 
     def serialize(self):
-        fields = []
-        seq_info = dict([(k, v) for k, v in self.__dict__.items() if k in fields and v is not None])
         images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.frames]
-        return bytearray(json.dumps((images, seq_info)), 'utf-8')
+        return bytearray(json.dumps((images, {})), 'utf-8')
 
     @property
     def duration(self):
@@ -98,15 +102,16 @@ class FrameSequence(GenericMessage):
         return self.frames[nr]
 
 
-class GenericTextLayout(GenericMessage):
+class GenericTextLayout(GenericProgram):
     def __init__(self):
+        super().__init__()
         self.program = None
         self.duration = None
 
     def load(self, payload):
         obj_data = json.loads(payload.decode())
+        super().load(obj_data)
         self.duration = obj_data.get('duration', None)
-        self.program = GetString(obj_data, 'program')
         return obj_data
 
 
@@ -118,7 +123,7 @@ class TextSingleLineLayout(GenericTextLayout):
 
     def load(self, payload):
         obj_data = super(TextSingleLineLayout, self).load(payload)
-        self.text = GetString(obj_data, 'text', "")
+        self.text = obj_data.get('text', "")
         self.font_size = obj_data.get('font_size', None)
         return self
 
