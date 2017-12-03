@@ -113,7 +113,7 @@ class Typesetter(GenericProcessor):
 
     def typeset_3lines(self, lines):
         display_width = self.config['DISPLAY_WIDTH']
-        maxchars = int(display_width)
+        maxchars = int(display_width / 8)
         image = bytearray()
         display_width_bytes = display_width * 8
         for line in lines:  # off all the lines
