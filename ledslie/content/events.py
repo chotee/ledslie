@@ -41,9 +41,9 @@ def create_date_string(event_date, now=None):
     elif day_diff == 1:
         return "Tomorrow"
     elif day_diff <= 5:
-        return event_date.strftime("%A")
+        return event_date.strftime("%a")
     else:
-        return event_date.strftime("%a %d")
+        return event_date.strftime("%a%d")
 
 
 class EventsContent(GenericContent):
