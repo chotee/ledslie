@@ -29,7 +29,7 @@ import treq
 
 from ledslie.config import Config
 from ledslie.content.generic import GenericContent, CreateContent
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.messages import TextTripleLinesLayout
 
 
@@ -97,7 +97,7 @@ class EventsContent(GenericContent):
         msg.lines = event_lines
         msg.duration = self.config["EVENTS_DISPLAY_DURATION"]
         msg.program = 'events'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg, qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
 
