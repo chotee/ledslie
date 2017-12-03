@@ -1,0 +1,15 @@
+[Unit]
+Description=Ledslie Techinc Events Information
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/default/ledslie
+User={{ ansible_user }}
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/content/events.py
+#ExecReload=/bin/kill -HUP $MAINPID
+#KillMode=process
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
