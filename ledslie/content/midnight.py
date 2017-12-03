@@ -115,7 +115,7 @@ class MidnightContent(GenericContent):
         msg = TextTripleLinesLayout()
         msg.duration = self.config['MIDNIGHT_DISPLAY_DURATION']
         msg.program = 'midnight'
-        msg.lines = ['Midnight in %s', city, ""]
+        msg.lines = ['Midnight in', city, ""]
         msg.valid_time = self.config["MIDNIGHT_SHOW_VALIDITY"]
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, _logFailure)
