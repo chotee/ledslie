@@ -43,6 +43,7 @@ class FakeMqttProtocol(FakeProtocol):
         return succeed("subscribed to %s" % topic)
 
     def publish(self, topic, message, qos, retain=False):
+        assert isinstance(message, (bytearray, bytes)), "type is %s, expected bytearray or bytes" % type(message)
         self._published_messages.append((topic, message))
         return succeed(None)
 

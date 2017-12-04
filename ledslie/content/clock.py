@@ -49,7 +49,7 @@ class ClockContent(GenericContent):
         msg.text = date_str
         msg.duration = 1000
         msg.program = 'clock'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, qos=1, message=bytearray(bytes(msg)))
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, qos=0, message=msg)
         d.addCallbacks(_logAll, _logFailure)
         return d
 

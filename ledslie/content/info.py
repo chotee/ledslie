@@ -46,13 +46,13 @@ class InfoContent(GenericContent):
         self.log.debug(" >< Starting one round of publishing >< ")
         msg = TextTripleLinesLayout()
         msg.lines = [
-            "Ledslie © GNU-AGPL3 ~ ;-)",
-            "https://wiki.techinc.nl/index.php/Ledslie",
-            "https://github.com/techinc/ledslie",
+            "Ledslie GNU-AGPL3",
+            "http://ledslie.ti",
+            "ledslie @ the Wiki",
         ]
         msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = 'info'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=bytes(msg), qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, _logFailure)
         return d
 

@@ -19,7 +19,6 @@ It consists of various processes that do one particular job.
 
 Ledslie has various dependencies on other projects.
 * [Mosquitto](http://mosquitto.org/) is the MQTT broker. 
-* [MessagePack](https://msgpack.org/) provides the message serialization. 
 * [Nginx](http://nginx.org/) does the webserver work.
 * [Ansible](https://www.ansible.com/) does the Deployment from the [deploy](deploy/) directory. 
 * [Pillow](https://python-pillow.org/) is used for image processing.

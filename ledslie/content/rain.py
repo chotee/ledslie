@@ -77,7 +77,7 @@ class RainContent(GenericContent):
             raw_arr.append([int(rain_value, 10), hour])
         return raw_arr
 
-    def publish_forcast(self, forcast_string):
+    def publish_forcast(self, forcast_string: str):
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
         msg = TextSingleLineLayout()
@@ -85,7 +85,7 @@ class RainContent(GenericContent):
         msg.duration = self.config["RAIN_DISPLAY_DURATION"]
         msg.program = 'rain'
         msg.font_size = 15
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=bytes(msg), qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
 

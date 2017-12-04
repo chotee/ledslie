@@ -1,13 +1,14 @@
-import msgpack
 import pytest
+
+import json
 
 import ledslie.processors.scheduler
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
-from ledslie.messages import ImageSequence
+from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-from ledslie.processors.scheduler import Catalog
+from ledslie.processors.scheduler import Catalog, AnimateStill
 
 
 class TestCatalog(object):
@@ -26,9 +27,9 @@ class TestCatalog(object):
         return catalog
 
     def _create_and_add_sequence(self, catalog, program_id, sequence_content):
-        seq = ImageSequence()
+        seq = FrameSequence()
         seq.program = program_id
-        seq.sequence = sequence_content
+        seq.frames = sequence_content
         catalog.add_program(program_id, seq)
 
     def test_get_frames(self):
@@ -103,29 +104,32 @@ class TestScheduler(object):
         sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')
         image_sequence = [
-            ['0' * image_size, {'duration': 100}],
-            ['1' * image_size, {'duration': 100}],
-            ['2' * image_size, {'duration': 100}],
+            [SerializeFrame(b'0' * image_size), {'duration': 100}],
+            [SerializeFrame(b'1' * image_size), {'duration': 100}],
+            [SerializeFrame(b'2' * image_size), {'duration': 100}],
         ]
-        payload = msgpack.packb([image_sequence, sequence_info])
-        return payload
+        payload = json.dumps([image_sequence, sequence_info])
+        return payload.encode()
 
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
-        sched.catalog.add_program(None, ImageSequence().load(self._test_sequence(sched)))
+        sched.catalog.add_program(None, FrameSequence().load(self._test_sequence(sched)))
         assert 0 == len(sched.protocol._published_messages)
 
         sched.send_next_frame()  # Frame 0
         assert 1 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'0' * image_size) == sched.protocol._published_messages[-1]
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'0' * image_size == sched.protocol._published_messages[-1][1]
 
         sched.send_next_frame()  # Frame 1
         assert 2 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'1' * image_size) == sched.protocol._published_messages[-1]
-        #
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'1' * image_size == sched.protocol._published_messages[-1][1]
+
         sched.send_next_frame()  # Frame 2
         assert 3 == len(sched.protocol._published_messages)
-        assert ('ledslie/frames/1', b'2' * image_size) == sched.protocol._published_messages[-1]
+        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
+        assert b'2' * image_size == sched.protocol._published_messages[-1][1]
         #
         sched.send_next_frame()  # End of program!
         # assert 3 == len(sched.protocol._published_messages)
@@ -138,15 +142,23 @@ class TestScheduler(object):
         sequence = [
             ['666', {'duration': 100}],  # Wrong number of bytes in the image
         ]
-        payload = msgpack.packb([sequence, {}])
+        payload = json.dumps([sequence, {}]).encode()
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.is_empty()
 
         sequence = [
-            ['0'*image_size, {}],  # No duration information, will default to the standard one.
+            [SerializeFrame(b'0'*image_size), {}],  # No duration information, will default to the standard one.
         ]
-        payload = msgpack.packb([sequence, {}])
+        payload = json.dumps([sequence, {}]).encode()
         assert sched.catalog.is_empty()
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.has_content()
+
+    def test_AnimateStill(self, sched):
+        seq = FrameSequence()
+        img_data = bytes(bytearray(Config().get('DISPLAY_SIZE')))
+        seq.add_frame(Frame(img_data, 2000))
+        animated_seq = AnimateStill(seq)
+        assert Config().get('DISPLAY_HEIGHT') == len(animated_seq)
+        assert sum([frame.duration for frame in animated_seq.frames])

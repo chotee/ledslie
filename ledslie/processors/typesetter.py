@@ -42,10 +42,9 @@ from ledslie.config import Config
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, ImageSequence
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence
+from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
-
-log = Logger(__file__)
 
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
@@ -58,6 +57,7 @@ class Typesetter(GenericProcessor):
     )
 
     def __init__(self, endpoint, factory):
+        self.log = Logger(__class__.__name__)
         super().__init__(endpoint, factory)
         self.sequencer = None
 
@@ -65,38 +65,36 @@ class Typesetter(GenericProcessor):
         '''
         Callback Receiving messages from publisher
         '''
-        log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
+        self.log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
         program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
             msg = TextSingleLineLayout()
             msg.text = payload[:30]
-            image_bytes = self.typeset_1line(msg).tobytes()
+            image_bytes = self.typeset_1line(msg)
             duration = DISPLAY_DEFAULT_DELAY
         else:
             if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
                 msg = TextSingleLineLayout().load(payload)
-                image_bytes = self.typeset_1line(msg).tobytes()
+                image_bytes = self.typeset_1line(msg)
             elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
                 msg = TextTripleLinesLayout().load(payload)
-                image_bytes = self.typeset_3lines(msg.lines).tobytes()
+                image_bytes = self.typeset_3lines(msg.lines)
             else:
                 raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
-            duration = msg.duration
-            program = msg.program
-        if image_bytes is None:
+        if image_bytes is None or "":
             return
-        seq_msg = ImageSequence()
-        seq_msg.program = program
-        seq_msg.sequence.append((image_bytes, {'duration': duration}))
+        seq_msg = FrameSequence()
+        seq_msg.program = msg.program
+        seq_msg.valid_time = msg.valid_time
+        seq_msg.frames.append((image_bytes, {'duration': msg.duration}))
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
-        data = bytes(image_data)
         if image_data.program is None:
             topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
         else:
             topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
-        self.publish(topic, data)
+        self.publish(topic, image_data)
 
     def typeset_1line(self, msg):
         image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),
@@ -111,39 +109,38 @@ class Typesetter(GenericProcessor):
             print("Can't find the font file '%s': %s" % (font_path, exc))
             return None
         draw.text((0, 0), msg.text, 255, font=font)
-        return image
+        return image.tobytes()
 
     def typeset_3lines(self, lines):
-        image = Image.new("L", (144, 24))
-        draw = ImageDraw.Draw(image)
-        fontFileName = "DroidSansMono.ttf"
-        font_path = self._get_font_filepath(fontFileName)
-        try:
-            font = ImageFont.truetype(font_path, 9)
-        except OSError as exc:
-            print("Can't find the font file '%s': %s" % (font_path, exc))
-            return None
-        for i, msg in enumerate(lines):
-            draw.text((0, (i*8)-2), msg, (255), font=font)
-        return image
+        display_width = self.config['DISPLAY_WIDTH']
+        maxchars = int(display_width / 8)
+        image = bytearray()
+        display_width_bytes = display_width * 8
+        for line in lines:  # off all the lines
+            line_image = bytearray(display_width_bytes)
+            for j, c in enumerate(line[:maxchars]):  # Look at each character of a line
+                try:
+                    glyph = font8x8[ord(c)]
+                except KeyError:
+                    glyph = font8x8[ord("?")]
+                xpos = j*8  # Horizontal Position in the line.
+                for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
+                    for x in range(8):  # Look at the bits
+                        if testBit(glyph_line, x) != 0:
+                            line_image[xpos + n * display_width + x] = 0xff
+            image.extend(line_image)
+        return bytes(image)
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
 
 
-# if __name__ == '__main__':
-#     if len(sys.argv) == 3 and sys.argv[1] == 'show':
-#         show_text = sys.argv[2].split(',')
-#         img = typeset_3lines(show_text)
-#         if img:
-#             img.show()
-#         else:
-#             print("No image was generated.")
-#     else:
-#         main()
+def testBit(int_type, offset):
+    mask = 1 << offset
+    return (int_type & mask)
+
 
 if __name__ == '__main__':
-    log = Logger(__file__)
     Config(envvar_silent=False)
     CreateService(Typesetter)
     reactor.run()

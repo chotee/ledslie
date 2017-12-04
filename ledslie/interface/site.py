@@ -1,23 +1,21 @@
-"""
-    Ledslie, a community information display
-    Copyright (C) 2017  Chotee@openended.eu
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published
-    by the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#     Ledslie, a community information display
+#     Copyright (C) 2017  Chotee@openended.eu
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as published
+#     by the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+#
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from PIL import Image, ImageSequence
-import msgpack
+import json
 
 from werkzeug.exceptions import UnsupportedMediaType
 from flask import Flask, render_template, request, json, Response
@@ -25,6 +23,7 @@ from flask_mqtt import Mqtt
 
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
     LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+from ledslie.messages import SerializeFrame
 
 app = Flask(__name__)
 mqtt = Mqtt()
@@ -35,13 +34,20 @@ def index():
     return render_template('index.html')
 
 
-def send_image(sequence):
-    mqtt.publish(LEDSLIE_TOPIC_SEQUENCES_UNNAMED, msgpack.packb(sequence))
+def send_image(sequence, program_name):
+    if not program_name:
+        topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+    else:
+        topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + program_name
+    payload = json.dumps(sequence)
+    mqtt.publish(topic, payload)
+    return payload
 
 
 @app.route('/gif', methods=['POST'])
 def gif():
     f = request.files['f']
+    program = request.form['program']
     try:
         im = Image.open(f)
     except OSError:
@@ -50,35 +56,40 @@ def gif():
     for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
         # frame_image, frame_info =
         sequence.append(process_frame(frame_raw))
-    send_image(sequence)
-
-    return Response(json.dumps({
-        'frame_count': len(sequence),
-        'frames': [f[1] for f in sequence],
-    }), mimetype='application/json')
+    payload = send_image(sequence, program)
+    return Response(payload, mimetype='application/json')
 
 
 @app.route('/text', methods=['POST'])
 def text1():
     text = request.form['text']
     duration = int(request.form['duration'])
+    program = request.form['program']
+    font_size = float(request.form['font_size'])
     set_data = {
         'text': text,
-        'duration': duration}
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_1LINE, msgpack.packb(set_data))
-    return Response(json.dumps(set_data), mimetype='application/json')
+        'program': program,
+        'duration': duration,
+        'font_size': font_size
+    }
+    payload = json.dumps(set_data)
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_1LINE, payload)
+    return Response(payload, mimetype='application/json')
 
 
 @app.route('/text3', methods=['POST'])
 def text3():
     lines = request.form['l1'], request.form['l2'], request.form['l3']
     duration = int(request.form['duration'])
+    program = request.form['program']
     set_data = {
         'lines': lines,
-        'duration': duration
+        'duration': duration,
+        'program': program,
     }
-    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, msgpack.packb(set_data))
-    return Response(json.dumps(set_data), mimetype='application/json')
+    payload = json.dumps(set_data)
+    mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, payload)
+    return Response(payload, mimetype='application/json')
 
 
 def process_frame(frame_raw):
@@ -94,7 +105,7 @@ def process_frame(frame_raw):
         # 'image_crc': crc32(frame_image.tobytes())
         # 'data': repr([d for d in frame.tobytes()]),
     }
-    return frame_image.tobytes(), frame_info
+    return SerializeFrame(frame_image.tobytes()), frame_info
 
 
 def make_app():

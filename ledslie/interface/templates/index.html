@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<div>
+<html>
 <meta charset="UTF-8" />
 <head>
     <title>Ledslie</title>
@@ -7,35 +7,79 @@
         body {font-family: sans-serif;}
     </style>
 </head>
+<body>
     <h1>Ledslie</h1>
-    <h2>How to use</h2>
-    <div>Text: POST to /text<br/>
+    <div>Create a single line of text<br/>
     <form action="/text" method="post">
-        <input type="text" name="text" value="Your text"/><br/>
-        <input type="text" name="duration" value="3000"/>
-        <input type="submit" value="Show">
+        <div><label for="text">Text</label><input type="text" name="text" value="Your text" id="text"/></div>
+        <div><label for="duration">Duration (ms)</label><input type="number" name="duration" value="3000" id="duration"/></div>
+        <div><label for="program">Program</label><input type="text" name="program" value="" id="program"/></div>
+        <div><label for="program">Font size</label><input type="number" name="font_size" value="20" id="font_size"/></div>
+        <div><label for="send">Send</label><input type="submit" value="Send" name="send" id="send"></div>
     </form>
     </div>
     <hr/>
-    <div>Text: POST to /text3<br/>
+    <div>Create three lines of text<br/>
     <form action="/text3" method="post">
-        <input type="text" name="l1" value="Line1"/><br/>
-        <input type="text" name="l2" value="Line2"/><br/>
-        <input type="text" name="l3" value="Line3"/><br/>
-        <input type="text" name="duration" value="3000"/>
-        <input type="submit" value="Show">
-    </form>
-    </div>
-    <hr/>
-    <div>Gifs POST to /gif with a valid 144x24 8bit grayscale, Content-Type: image/gif<br/>
-    <pre>$ curl -v -X POST --data-binary @tester/test.gif -H "Content-Type: image/gif" http://«my_ip»/gif</pre>
-    <form action="/gif" method="post" enctype="multipart/form-data">
-        <input type="file" name="f">
-        <input type="submit" value="Show">
+        <div><label for="l1">Line 1</label><input type="text" name="l1" value="Line1" id="l1"/></div>
+        <div><label for="l2">Line 2</label><input type="text" name="l2" value="Line2" id="l2"/></div>
+        <div><label for="l3">Line 3</label><input type="text" name="l3" value="Line3" id="l3"/></div>
+        <div><label for="duration">Duration (ms)</label><input type="number" name="duration" value="3000"/></div>
+        <div><label for="program">Program</label><input type="text" name="program" id="program" value=""/></div>
+        <div><label for="send">Send</label><input type="submit" value="Send" name="send" id="send"></div>
     </form>
     </div>
     <hr/>
     <div>
+    <form action="/gif" method="post" enctype="multipart/form-data">
+        <div><label for="f">Image File</label><input type="file" id="f" name="f"></div>
+        <div><label for="program">Program</label><input type="text" name="program" id="program" value=""/></div>
+        <div><label for="send">Send</label><input type="submit" value="Show" id="send" name="send"></div>
+    </form>
+    </div>
+    <hr/>
+     <h2>How to use</h2>
+    From easy to more involved, this is how you can integrate with the display.
+    <ul>
+        <li>Use this website (duh!)</li>
+        <li>Post to the webserver. Check the forms for how. Posted images will be converted to 144x24 ~6bit grayscale, so YMMV.
+            Here's a gif cli example to post an (animated) gif.
+                <pre>$ curl -v -F f=@some_image.gif -F program=MyProgram  http://ledslie.ti/gif </pre>
+        </li>
+        <li>Use the mqtt broker at <b>ledslie.ti:1883</b>. Topics are
+            <a href="https://github.com/techinc/ledslie/blob/master/ledslie/definitions.py">on github</a></li>
+        <li><ul>
+            <li>Send a text to LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT</li>
+            <li>Send JSON with text to the mqtt broker. The JSON response to the web interface is what
+                you'll need to submit to LEDSLIE_TOPIC_TYPESETTER_1LINE or LEDSLIE_TOPIC_TYPESETTER_3LINES</li>
+            <li>Send a full program to the scheduler. This is a JSON with a list of frames+map of data. You can send
+                these to LEDSLIE_TOPIC_SEQUENCES_UNNAMED or LEDSLIE_TOPIC_SEQUENCES_PROGRAMS+replacing the + with your
+                program's name. For example create program "test" we send to topic "ledslie/sequences/1/test":
+                <pre>
+[
+    [
+        [" -- bytes of frame 1 -- ", {"duration": 20}],
+        [" -- bytes of frame 2 -- ", {"duration": 30}],
+                    ...
+        [" -- bytes of frame N -- ", {"duration": X}]
+    ], {}
+]
+                </pre>
+            </li>
+            <li>Post Raw bytes of the images to LEDSLIE_TOPIC_SERIALIZER. One byte per pixel, right and down, 0x00 is black,
+                0xFF is 100% brightess (you didn't see that coming, now did you?!)</li>
+        </ul></li>
+    </ul>
+    To get examples of usage, you can subscript to the 'ledslie/#' topics:
+    <pre>$ mosquitto_sub -h ledslie.ti -v -t 'ledslie/#' -T ledslie/frames/#</pre>
+    The "-T ledslie/frames/#" option suppresses displaying the binary frames being send to the serializer.
+    </div>
+    <h2>About the program scheduler</h2>
+    <div>There's a scheduler function that picks which one to show from the catalog with all the programs. When submitting a program,
+    it gets put into the catalog and shown repeatedly. Sending programs with an existing program-name replaces them.
+    Programs age. If no update was received for a number of minutes (defaults to 30) they get removed from the catalog.</div>
+    <hr/>
+    <div class="footer">
         <a href="https://wiki.techinc.nl/index.php/Ledslie">Ledslie Project page</a>
     </div>
 </body>
