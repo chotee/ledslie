@@ -113,7 +113,7 @@ class Typesetter(GenericProcessor):
 
     def typeset_3lines(self, lines):
         display_width = self.config['DISPLAY_WIDTH']
-        maxchars = int(display_width / 9)
+        maxchars = int(display_width / 8)
         image = bytearray()
         display_width_bytes = display_width * 8
         for line in lines:  # off all the lines
@@ -123,7 +123,7 @@ class Typesetter(GenericProcessor):
                     glyph = font8x8[ord(c)]
                 except KeyError:
                     glyph = font8x8[ord("?")]
-                xpos = j*9  # Horizontal Position in the line.
+                xpos = j*8  # Horizontal Position in the line.
                 for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
                     for x in range(8):  # Look at the bits
                         if testBit(glyph_line, x) != 0:

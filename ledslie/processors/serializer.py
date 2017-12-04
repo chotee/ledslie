@@ -85,8 +85,8 @@ def on_message(client, userdata, mqtt_msg):
         return
     data = prepare_image(image)
     send_serial(data)
-    client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
-        crc32(image), len(image)))
+    # client.publish("ledslie/logs/serializer", "Send image %s of %d bytes" % (
+    #     crc32(image), len(image)))
 
 
 def main():

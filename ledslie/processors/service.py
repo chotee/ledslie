@@ -27,6 +27,7 @@ from twisted.logger import Logger, LogLevel, globalLogBeginner, textFileLogObser
     FilteringLogObserver, LogLevelFilterPredicate
 
 from ledslie.config import Config
+from ledslie.definitions import LEDSLIE_TOPIC_STATS_BASE
 from ledslie.messages import GenericMessage
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
@@ -116,6 +117,8 @@ class GenericProcessor(ClientService):
         else:
             log.info("Connected and subscribed to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
             self.reactor.callLater(0, self.onBrokerConnected)
+        self_name = self.__class__.__name__
+        self.publish(topic=LEDSLIE_TOPIC_STATS_BASE+self_name, message="%s now (re-)connected" % self_name)
 
     def onBrokerConnected(self):
         log.info("onBrokerConnected called")

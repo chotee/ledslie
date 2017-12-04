@@ -46,9 +46,9 @@ class InfoContent(GenericContent):
         self.log.debug(" >< Starting one round of publishing >< ")
         msg = TextTripleLinesLayout()
         msg.lines = [
-            "Ledslie © GNU-AGPL3 ~ ;-)",
+            "Ledslie GNU-AGPL3",
             "http://ledslie.ti",
-            "https://wiki.techinc.nl/index.php/Ledslie",
+            "ledslie @ the Wiki",
         ]
         msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = 'info'

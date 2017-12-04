@@ -10,6 +10,7 @@
     - ledslie-info
     - ledslie-rain
     - ledslie-midnight
+    - ledslie-events
   become: yes
 
 - name: Start ledslie processer services
@@ -24,6 +25,7 @@
     - ledslie-clock
     - ledslie-info
     - ledslie-midnight
+    - ledslie-events
   become: yes
   tags:
     - update

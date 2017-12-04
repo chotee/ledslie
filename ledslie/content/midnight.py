@@ -24,8 +24,8 @@ from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.content.generic import GenericContent, CreateContent
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
-from ledslie.messages import TextSingleLineLayout
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_3LINES
+from ledslie.messages import TextTripleLinesLayout
 
 import pytz
 
@@ -112,13 +112,12 @@ class MidnightContent(GenericContent):
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
 
-        msg = TextSingleLineLayout()
+        msg = TextTripleLinesLayout()
         msg.duration = self.config['MIDNIGHT_DISPLAY_DURATION']
         msg.program = 'midnight'
-        msg.text = 'Midnight in %s' % city
-        msg.font_size = self.config["MIDNIGHT_FONT_SIZE"]
+        msg.lines = ['Midnight in', city, ""]
         msg.valid_time = self.config["MIDNIGHT_SHOW_VALIDITY"]
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg, qos=1)
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, _logFailure)
         return d
 
