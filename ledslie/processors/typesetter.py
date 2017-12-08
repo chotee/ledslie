@@ -162,8 +162,9 @@ class Typesetter(GenericProcessor):
         fs.add_frame(Frame(alert_neg, duration=200))
         fs.add_frame(Frame(alert, duration=200))
         fs.add_frame(Frame(alert_neg, duration=200))
-        lines = ["From %s" % who, text[:char_width], text[char_width:]]
-        fs.add_frame(Frame(self.typeset_3lines(lines), duration=2000))
+        if text:
+            lines = ["From %s" % who, text[:char_width], text[char_width:]]
+            fs.add_frame(Frame(self.typeset_3lines(lines), duration=2000))
         fs.prio = "alert"
         return fs
 
