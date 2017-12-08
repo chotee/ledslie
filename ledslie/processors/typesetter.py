@@ -41,8 +41,9 @@ from twisted.logger import Logger
 from ledslie.config import Config
 from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
-    LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence
+    LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
+    LEDSLIE_TOPIC_ALERT
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence, TextAlertLayout, Frame
 from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
@@ -54,6 +55,7 @@ class Typesetter(GenericProcessor):
         (LEDSLIE_TOPIC_TYPESETTER_1LINE, 1),
         (LEDSLIE_TOPIC_TYPESETTER_3LINES, 1),
         (LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, 1),
+        (LEDSLIE_TOPIC_ALERT + "+", 1),
     )
 
     def __init__(self, endpoint, factory):
@@ -68,19 +70,23 @@ class Typesetter(GenericProcessor):
         self.log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
         program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
-            msg = TextSingleLineLayout()
-            msg.text = payload[:30]
-            image_bytes = self.typeset_1line(msg)
-            duration = DISPLAY_DEFAULT_DELAY
+            font_size = self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
+            image_bytes = self.typeset_1line(payload[:30], font_size)
+        elif topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
+            msg = TextSingleLineLayout().load(payload)
+            font_size = msg.font_size if msg.font_size is not None else self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
+            text = msg.text
+            image_bytes = self.typeset_1line(text, font_size)
+        elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
+            msg = TextTripleLinesLayout().load(payload)
+            image_bytes = self.typeset_3lines(msg.lines)
+        elif topic.startswith(LEDSLIE_TOPIC_ALERT):
+            msg = TextAlertLayout().load(payload)
+            frame_seq = self.typeset_alert(topic, msg)
+            frame_seq.program = "alert"
+            return self.send_frame_sequence(frame_seq)
         else:
-            if topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
-                msg = TextSingleLineLayout().load(payload)
-                image_bytes = self.typeset_1line(msg)
-            elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
-                msg = TextTripleLinesLayout().load(payload)
-                image_bytes = self.typeset_3lines(msg.lines)
-            else:
-                raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
+            raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
         if image_bytes is None or "":
             return
         seq_msg = FrameSequence()
@@ -96,24 +102,28 @@ class Typesetter(GenericProcessor):
             topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + image_data.program
         self.publish(topic, image_data)
 
-    def typeset_1line(self, msg):
+    def send_frame_sequence(self, seq: FrameSequence):
+        topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + seq.program
+        message = seq.serialize()
+        return self.protocol.publish(topic, message, 1, retain=False)
+
+    def typeset_1line(self, text: str, font_size: float):
         image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),
                                 self.config.get("DISPLAY_HEIGHT")))
         draw = ImageDraw.Draw(image)
         fontFileName = "DroidSansMono.ttf"
         font_path = self._get_font_filepath(fontFileName)
-        font_size = msg.font_size if msg.font_size is not None else self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
         try:
             font = ImageFont.truetype(font_path, font_size)
         except OSError as exc:
             print("Can't find the font file '%s': %s" % (font_path, exc))
             return None
-        draw.text((0, 0), msg.text, 255, font=font)
+        draw.text((0, 0), text, 255, font=font)
         return image.tobytes()
 
     def typeset_3lines(self, lines):
         display_width = self.config['DISPLAY_WIDTH']
-        maxchars = int(display_width / 8)
+        maxchars = self._char_display_width()
         image = bytearray()
         display_width_bytes = display_width * 8
         for line in lines:  # off all the lines
@@ -131,8 +141,31 @@ class Typesetter(GenericProcessor):
             image.extend(line_image)
         return bytes(image)
 
+    def _char_display_width(self):
+        display_width = self.config['DISPLAY_WIDTH']
+        return int(display_width / 8)
+
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
+
+    def typeset_alert(self, topic: str, msg: TextAlertLayout) -> FrameSequence:
+        assert topic.split('/')[-1] == "spacealert"
+        display_size = self.config['DISPLAY_SIZE']
+        text = msg.text
+        who = msg.who
+        fs = FrameSequence()
+        char_width = self._char_display_width()
+        fs.program = msg.program
+        alert = self.typeset_1line("Space Alert!", 20)
+        alert_neg = bytes([(~x & 0xff) for x in alert])
+        fs.add_frame(Frame(alert, duration=200))
+        fs.add_frame(Frame(alert_neg, duration=200))
+        fs.add_frame(Frame(alert, duration=200))
+        fs.add_frame(Frame(alert_neg, duration=200))
+        lines = ["From %s" % who, text[:char_width], text[char_width:]]
+        fs.add_frame(Frame(self.typeset_3lines(lines), duration=2000))
+        fs.prio = "alert"
+        return fs
 
 
 def testBit(int_type, offset):

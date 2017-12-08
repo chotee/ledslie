@@ -44,7 +44,7 @@ class Frame(GenericMessage):
         self.duration = duration
 
     def serialize(self):
-        return SerializeFrame(self.img_data)
+        return SerializeFrame(self.img_data), {'duration': self.duration}
 
     def raw(self):
         return self.img_data
@@ -77,7 +77,13 @@ class FrameSequence(GenericProgram):
         return self
 
     def serialize(self):
-        images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.frames]
+        images = []
+        for frame in self.frames:
+            if hasattr(frame, 'serialize'):
+                images.append(frame.serialize())
+            else:
+                idata, iinfo = frame
+                images.append((SerializeFrame(idata), iinfo))
         return bytearray(json.dumps((images, {})), 'utf-8')
 
     @property
@@ -92,7 +98,7 @@ class FrameSequence(GenericProgram):
             self.frame_nr = -1
             raise
 
-    def add_frame(self, frame):
+    def add_frame(self, frame: Frame):
         self.frames.append(frame)
 
     def __len__(self):
@@ -136,4 +142,17 @@ class TextTripleLinesLayout(GenericTextLayout):
     def load(self, payload):
         obj_data = super(TextTripleLinesLayout, self).load(payload)
         self.lines = obj_data.get('lines', [])
+        return self
+
+
+class TextAlertLayout(GenericTextLayout):
+    def __init__(self):
+        super().__init__()
+        self.text = ""
+        self.who = ""
+
+    def load(self, payload):
+        obj_data = super(TextAlertLayout, self).load(payload)
+        self.text = obj_data.get('text', "")
+        self.who = obj_data.get('who', "")
         return self
