@@ -22,7 +22,7 @@ from flask import Flask, render_template, request, json, Response
 from flask_mqtt import Mqtt
 
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
-    LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+    LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_ALERT
 from ledslie.messages import SerializeFrame
 
 app = Flask(__name__)
@@ -89,6 +89,20 @@ def text3():
     }
     payload = json.dumps(set_data)
     mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, payload)
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/alert', methods=['POST'])
+def alert():
+    text = request.form['text']
+    who = request.form['who']
+    alert_type = "spacealert"
+    set_data = {
+        'text': text,
+        'who': who,
+    }
+    payload = json.dumps(set_data)
+    mqtt.publish(LEDSLIE_TOPIC_ALERT + alert_type, payload)
     return Response(payload, mimetype='application/json')
 
 

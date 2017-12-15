@@ -5,6 +5,7 @@ import binascii
 from twisted.logger import Logger
 
 from ledslie.config import Config
+from ledslie.definitions import ALERT_PRIO_STRING
 
 log = Logger()
 
@@ -44,7 +45,7 @@ class Frame(GenericMessage):
         self.duration = duration
 
     def serialize(self):
-        return SerializeFrame(self.img_data)
+        return SerializeFrame(self.img_data), {'duration': self.duration}
 
     def raw(self):
         return self.img_data
@@ -53,32 +54,43 @@ class Frame(GenericMessage):
 class FrameSequence(GenericProgram):
     def __init__(self):
         super().__init__()
+        self._config = Config()
         self.frames = []
+        self.prio = None
         self.frame_nr = -1
 
     def load(self, payload: bytearray):
-        config = Config()
         seq_images, seq_info = json.loads(payload.decode())
         super().load(seq_info)
+        self.prio = seq_info.get('prio', None)
         for image_data_encoded, image_info in seq_images:
             try:
                 image_data = DeserializeFrame(image_data_encoded)
             except binascii.Error:
                 return
-            if len(image_data) != config.get('DISPLAY_SIZE'):
+            if len(image_data) != self._config.get('DISPLAY_SIZE'):
                 log.error("Frame is of the wrong length %d, expected %d. Ignoring." % (
-                    len(image_data), config.get('DISPLAY_SIZE')))
+                    len(image_data), self._config.get('DISPLAY_SIZE')))
                 return
             try:
-                image_duration = image_info.get('duration', config['DISPLAY_DEFAULT_DELAY'])
+                image_duration = image_info.get('duration', self._config['DISPLAY_DEFAULT_DELAY'])
             except KeyError:
                 break
             self.frames.append(Frame(image_data, duration=image_duration))
         return self
 
     def serialize(self):
-        images = [(SerializeFrame(idata), iinfo) for idata, iinfo in self.frames]
-        return bytearray(json.dumps((images, {})), 'utf-8')
+        images = []
+        for frame in self.frames:
+            if hasattr(frame, 'serialize'):
+                images.append(frame.serialize())
+            else:
+                idata, iinfo = frame
+                images.append((SerializeFrame(idata), iinfo))
+        sequence_info = {}
+        if self.prio is not None:
+            sequence_info['prio'] = self.prio
+        return bytearray(json.dumps((images, sequence_info)), 'utf-8')
 
     @property
     def duration(self):
@@ -92,7 +104,10 @@ class FrameSequence(GenericProgram):
             self.frame_nr = -1
             raise
 
-    def add_frame(self, frame):
+    def is_alert(self):
+        return self.prio == ALERT_PRIO_STRING
+
+    def add_frame(self, frame: Frame):
         self.frames.append(frame)
 
     def __len__(self):
@@ -136,4 +151,17 @@ class TextTripleLinesLayout(GenericTextLayout):
     def load(self, payload):
         obj_data = super(TextTripleLinesLayout, self).load(payload)
         self.lines = obj_data.get('lines', [])
+        return self
+
+
+class TextAlertLayout(GenericTextLayout):
+    def __init__(self):
+        super().__init__()
+        self.text = ""
+        self.who = ""
+
+    def load(self, payload):
+        obj_data = super(TextAlertLayout, self).load(payload)
+        self.text = obj_data.get('text', "")
+        self.who = obj_data.get('who', "")
         return self

@@ -14,19 +14,19 @@ def test_create_date_string():
     assert "Tomorrow" == create_date_string(tomorrow, now)
 
     some_date = now + timedelta(days=2)
-    assert "Monday" == create_date_string(some_date, now)
+    assert "Mon" == create_date_string(some_date, now)
 
     some_date = now + timedelta(days=5)
-    assert "Thursday" == create_date_string(some_date, now)
+    assert "Thu" == create_date_string(some_date, now)
 
     some_date = now + timedelta(days=6)
-    assert "Fri 01" == create_date_string(some_date, now)
+    assert "Fri01" == create_date_string(some_date, now)
 
     some_date = now + timedelta(days=7)
-    assert "Sat 02" == create_date_string(some_date, now)
+    assert "Sat02" == create_date_string(some_date, now)
 
     some_date = now + timedelta(days=8)
-    assert "Sun 03" == create_date_string(some_date, now)
+    assert "Sun03" == create_date_string(some_date, now)
 
 
 class TestEventsContent(object):
