@@ -120,7 +120,6 @@ class FrameSequence(GenericProgram):
 class GenericTextLayout(GenericProgram):
     def __init__(self):
         super().__init__()
-        self.program = None
         self.duration = None
 
     def load(self, payload):

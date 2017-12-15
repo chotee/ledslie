@@ -39,7 +39,6 @@ from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.config import Config
-from ledslie.defaults import DISPLAY_DEFAULT_DELAY
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
     LEDSLIE_TOPIC_ALERT
@@ -68,10 +67,11 @@ class Typesetter(GenericProcessor):
         Callback Receiving messages from publisher
         '''
         self.log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
-        program = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
             font_size = self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
             image_bytes = self.typeset_1line(payload[:30], font_size)
+            msg = TextSingleLineLayout()
+            msg.duration = self.config['DISPLAY_DEFAULT_DELAY']
         elif topic == LEDSLIE_TOPIC_TYPESETTER_1LINE:
             msg = TextSingleLineLayout().load(payload)
             font_size = msg.font_size if msg.font_size is not None else self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
@@ -107,14 +107,14 @@ class Typesetter(GenericProcessor):
         message = seq.serialize()
         return self.protocol.publish(topic, message, 1, retain=False)
 
-    def typeset_1line(self, text: str, font_size: float):
+    def typeset_1line(self, text: str, font_size: int):
         image = Image.new("L", (self.config.get("DISPLAY_WIDTH"),
                                 self.config.get("DISPLAY_HEIGHT")))
         draw = ImageDraw.Draw(image)
         fontFileName = "DroidSansMono.ttf"
         font_path = self._get_font_filepath(fontFileName)
         try:
-            font = ImageFont.truetype(font_path, font_size)
+            font = ImageFont.truetype(font_path, int(font_size))
         except OSError as exc:
             print("Can't find the font file '%s': %s" % (font_path, exc))
             return None
@@ -150,7 +150,6 @@ class Typesetter(GenericProcessor):
 
     def typeset_alert(self, topic: str, msg: TextAlertLayout) -> FrameSequence:
         assert topic.split('/')[-1] == "spacealert"
-        display_size = self.config['DISPLAY_SIZE']
         text = msg.text
         who = msg.who
         fs = FrameSequence()
