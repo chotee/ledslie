@@ -21,7 +21,7 @@ import sys
 from mqtt.client.factory import MQTTFactory
 from twisted.application.internet import ClientService, backoffPolicy, _maybeGlobalReactor
 from twisted.internet import reactor, task
-from twisted.internet.defer import inlineCallbacks, DeferredList
+from twisted.internet.defer import inlineCallbacks, DeferredList, Deferred
 from twisted.internet.endpoints import clientFromString
 from twisted.logger import Logger, LogLevel, globalLogBeginner, textFileLogObserver, \
     FilteringLogObserver, LogLevelFilterPredicate
@@ -118,7 +118,7 @@ class GenericProcessor(ClientService):
             log.info("Connected and subscribed to {broker}", broker=self.config.get('MQTT_BROKER_CONN_STRING'))
             self.reactor.callLater(0, self.onBrokerConnected)
         self_name = self.__class__.__name__
-        self.publish(topic=LEDSLIE_TOPIC_STATS_BASE+self_name, message="%s now (re-)connected" % self_name)
+        self.publish(topic=LEDSLIE_TOPIC_STATS_BASE+self_name, message="%s (re-)connected" % self_name)
 
     def onBrokerConnected(self):
         log.info("onBrokerConnected called")
@@ -131,12 +131,17 @@ class GenericProcessor(ClientService):
         def _logGrantedQoS(value):
             log.debug("subscriber response {value!r}", value=value)
             return True
-        deferreds = []
+
+        def _subscribe_topic(response, topic, qos):
+            log.info("subscriber response {value!r}", value=response)
+            return self.protocol.subscribe(topic, qos)
+
+        d = Deferred()
         for topic, qos in self.subscriptions:
-            d = self.protocol.subscribe(topic, qos)
-            d.addCallbacks(_logGrantedQoS, _logFailure)
-            deferreds.append(d)
-        return DeferredList(deferreds)
+            d.addCallback(_subscribe_topic, topic, qos)
+            d.addErrback(_logFailure)
+        d.callback("Start")
+        return d
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         raise NotImplemented()

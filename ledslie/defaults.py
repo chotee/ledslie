@@ -26,6 +26,8 @@ DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
 TYPESETTER_1LINE_DEFAULT_FONT_SIZE = 20
 
 PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 30 minutes.
+ALERT_RETIREMENT_AGE   = 5*60   # Age in seconds before a alert is removed
+ALERT_INITIAL_REPEAT   = 5      # Number of times an alert is repeated before it is seen as a normal program.
 
 RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.34557&lon=4.82647"
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates

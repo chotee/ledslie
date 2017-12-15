@@ -72,10 +72,9 @@ class TestTypesetter(object):
         assert 1000 == seq.duration
 
     def test_font_size(self, monkeypatch, tsetter):
-        msg = TextSingleLineLayout()
-        msg.font_size = 13
-        msg.text = "lala"
+        font_size = 13
+        text = "lala"
         def typetype(font_path, font_size):
             assert font_size == 13
         monkeypatch.setattr("PIL.ImageFont.truetype", typetype)
-        tsetter.typeset_1line(msg)
+        tsetter.typeset_1line(text, font_size)

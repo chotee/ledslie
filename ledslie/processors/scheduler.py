@@ -33,7 +33,7 @@ from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
-    LEDSLIE_TOPIC_SERIALIZER
+    LEDSLIE_TOPIC_SERIALIZER, ALERT_PRIO_STRING
 from ledslie.messages import FrameSequence, Frame, SerializeFrame
 from ledslie.processors.service import CreateService, GenericProcessor
 
@@ -67,6 +67,7 @@ class Catalog(object):
         self.program_name_list = []  # list of keys that indicate the sequence of programs.
         self.active_program_name = None
         self.program_retirement = {}
+        self.alert_program = None
 
     def now(self):
         return time.time()
@@ -78,15 +79,24 @@ class Catalog(object):
         return not self.has_content()
 
     def select_next_program(self):
-        try:
-            active_program_idx = self.program_name_list.index(self.active_program_name)
-            next_program_name = self.program_name_list[active_program_idx+1]
-        except (ValueError, IndexError):
-            next_program_name = self.program_name_list[0]
-        self.active_program = self.programs[next_program_name]
-        self.active_program_name = next_program_name
+        if self.alert_program and self.alert_program.alert_count > 0:
+            self.alert_program.alert_count -= 1
+            self.active_program = self.alert_program
+            self.active_program_name = ALERT_PRIO_STRING
+        else:
+            next_program_name = self._select_program()
+            self.active_program = self.programs[next_program_name]
+            self.active_program_name = next_program_name
         if self.now() > self.program_retirement[self.active_program_name]:
             self.remove_program(self.active_program_name)
+
+    def _select_program(self):
+        try:
+            active_program_idx = self.program_name_list.index(self.active_program_name)
+            next_program_name = self.program_name_list[active_program_idx + 1]
+        except (ValueError, IndexError):
+            next_program_name = self.program_name_list[0]
+        return next_program_name
 
     def next_frame(self):
         if self.active_program is None:
@@ -102,10 +112,12 @@ class Catalog(object):
         if program_id not in self.programs:
             self.program_name_list.append(program_id)
         self.programs[program_id] = seq
-        if seq.valid_time:
-            retirement_age = min(seq.valid_time, self.config['PROGRAM_RETIREMENT_AGE'])
-        else:
-            retirement_age = self.config['PROGRAM_RETIREMENT_AGE']
+        default_retirement_age = self.config['PROGRAM_RETIREMENT_AGE']
+        if seq.is_alert():
+            self.alert_program = seq
+            seq.alert_count = self.config['ALERT_INITIAL_REPEAT']
+            seq.valid_time = self.config['ALERT_RETIREMENT_AGE']
+        retirement_age = min(seq.valid_time, default_retirement_age) if seq.valid_time else default_retirement_age
         self.program_retirement[program_id] = self.now() + retirement_age
 
     def remove_program(self, program_id):
