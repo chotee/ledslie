@@ -11,6 +11,7 @@
     - ledslie-rain
     - ledslie-midnight
     - ledslie-events
+    - ledslie-coins
   become: yes
 
 - name: Start ledslie processer services
@@ -26,6 +27,7 @@
     - ledslie-info
     - ledslie-midnight
     - ledslie-events
+    - ledslie-coins
   become: yes
   tags:
     - update

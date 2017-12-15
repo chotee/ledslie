@@ -41,3 +41,7 @@ EVENTS_DISPLAY_DURATION = 6*1000  # Mili-seconds that information is shown.
 MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.
 MIDNIGHT_FONT_SIZE        = 16      # Font-size of the message
+
+COINS_PRICE_SOURCE        = 'https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,BCH,ETH&tsyms=EUR'
+COINS_UPDATE_FREQ         = 5*60  # Seconds between price updates.
+COINS_DISPLAY_DURATION    = 6*1000  # Mili-seconds that information is shown.
