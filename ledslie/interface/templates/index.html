@@ -9,7 +9,7 @@
 </head>
 <body>
     <h1>Ledslie</h1>
-    <div>Create a single line of text<br/>
+    <div><h2>Create a single line of text</h2><br/>
     <form action="/text" method="post">
         <div><label for="text">Text</label><input type="text" name="text" value="Your text" id="text"/></div>
         <div><label for="duration">Duration (ms)</label><input type="number" name="duration" value="3000" id="duration"/></div>
@@ -18,8 +18,7 @@
         <div><label for="send">Send</label><input type="submit" value="Send" name="send" id="send"></div>
     </form>
     </div>
-    <hr/>
-    <div>Create three lines of text<br/>
+    <div><h2>Create three lines of text</h2><br/>
     <form action="/text3" method="post">
         <div><label for="l1">Line 1</label><input type="text" name="l1" value="Line1" id="l1"/></div>
         <div><label for="l2">Line 2</label><input type="text" name="l2" value="Line2" id="l2"/></div>
@@ -29,8 +28,14 @@
         <div><label for="send">Send</label><input type="submit" value="Send" name="send" id="send"></div>
     </form>
     </div>
-    <hr/>
-    <div>
+    <div><h2>Show an alert message</h2><br/>
+    <form action="/alert" method="post" enctype="multipart/form-data">
+        <div><label for="text">Text</label><input type="text" name="text" value="Your alert" id="text"/></div>
+        <div><label for="who">Who</label><input type="text" name="who" value="YourNick" id="who"/></div>
+        <div><label for="send">Send</label><input type="submit" value="Show" id="send" name="send"></div>
+    </form>
+    </div>
+    <div><h2>Upload an image</h2><br/>
     <form action="/gif" method="post" enctype="multipart/form-data">
         <div><label for="f">Image File</label><input type="file" id="f" name="f"></div>
         <div><label for="program">Program</label><input type="text" name="program" id="program" value=""/></div>
