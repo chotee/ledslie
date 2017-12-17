@@ -43,6 +43,7 @@ DestinationCode_to_name = {
     'SLL': 'Lely',
     'AMS': 'Amtl',
     'M09501429': 'AirP',
+    'M19501429': 'AirP',
     'M19505436': 'Lely',
     'M09505436': 'Lely',
 }
@@ -108,8 +109,7 @@ class OVInfoContent(GenericContent):
 
     def publish_ov_info(self):
         lines = self.create_ov_display()
-        print(lines)
-        # return self.publish_ov_display(seq)
+        return self.publish_ov_display(lines)
 
     def now(self) -> datetime:
         return datetime.now()
@@ -163,6 +163,8 @@ class OVInfoContent(GenericContent):
     def publish_ov_display(self, info_lines: list) -> Deferred:
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
+        if not info_lines:
+            return
         msg = TextTripleLinesLayout()
         msg.lines = info_lines
         msg.duration = self.config["OVINFO_DISPLAY_DURATION"]
