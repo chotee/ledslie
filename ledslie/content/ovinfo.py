@@ -35,7 +35,11 @@ from ledslie.messages import TextTripleLinesLayout
 # The complete information can be obtained from
 # https://reisinformatiegroep.nl/ndovloket/ but you need to request creds to get it.
 # But this is the open API that's used.
-# Info https://github.com/skywave/KV78Turbo-OVAPI/wiki  #
+# Info https://github.com/skywave/KV78Turbo-OVAPI/wiki
+#
+# An alternative would be to connect to the GVB websockets interface.
+# Example of this interface: https://github.com/osresearch/esp32-ttgo/blob/master/demo/BusTimeNL/BusTimeNL.ino
+# Twisted websockets client https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo
 
 DestinationCode_to_name = {
     'CS': 'CS',
