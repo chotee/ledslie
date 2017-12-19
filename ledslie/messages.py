@@ -110,6 +110,9 @@ class FrameSequence(GenericProgram):
     def add_frame(self, frame: Frame):
         self.frames.append(frame)
 
+    def is_empty(self):
+        return len(self) == 0
+
     def __len__(self):
         return len(self.frames)
 

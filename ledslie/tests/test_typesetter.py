@@ -1,4 +1,5 @@
 import pytest
+import json
 
 import ledslie.processors.typesetter
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
@@ -56,6 +57,17 @@ class TestTypesetter(object):
         assert seq_topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED
         assert len(seq_data) > Config()['DISPLAY_SIZE']
 
+    def test_ledslie_typesetting_3lines_multiline(self, tsetter):
+        """I test sending more then 3 lines to the display in 3 lines mode."""
+        topic = LEDSLIE_TOPIC_TYPESETTER_3LINES
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo", "Bar", "Quux", "FOOBAR"]
+        tsetter.onPublish(topic, msg.serialize(), qos=0, dup=False, retain=False, msgId=0)
+        seq_topic, seq_data = tsetter.protocol._published_messages[-1]
+        assert seq_topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED
+        res_obj = json.loads(seq_data.decode())
+        # assert len(res_obj[0]) > 1
+
     def test_ledslie_typesetter_fields(self, tsetter):
         topic = LEDSLIE_TOPIC_TYPESETTER_1LINE
         msg = TextSingleLineLayout()
@@ -78,3 +90,9 @@ class TestTypesetter(object):
             assert font_size == 13
         monkeypatch.setattr("PIL.ImageFont.truetype", typetype)
         tsetter.typeset_1line(text, font_size)
+
+    def test_typeset_3lines(self, tsetter):
+        seq = FrameSequence()
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo", "Bar", "Quux", "Foobar", "FooQuux"]
+        res = tsetter.typeset_3lines(seq, msg)
