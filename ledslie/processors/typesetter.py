@@ -129,7 +129,11 @@ class Typesetter(GenericProcessor):
         for line in lines:  # off all the lines
             self._markup_line(image, line)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
-        seq.add_frame(Frame(bytes(image), duration=duration))
+        if len(lines) <= 3:
+            seq.add_frame(Frame(bytes(image), duration=duration))
+        else:
+            line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+            seq.extend(self._animate_vertical_scroll(image, line_duration))
         return seq
 
     def _markup_line(self, image, line):
@@ -147,6 +151,28 @@ class Typesetter(GenericProcessor):
                     if testBit(glyph_line, x) != 0:
                         line_image[xpos + n * display_width + x] = 0xff
         image.extend(line_image)
+
+    def _animate_vertical_scroll(self, image: bytearray, line_duration: int):
+        display_width = self.config['DISPLAY_WIDTH']
+        animate_pause = 30
+        line_bytes = display_width * 8
+        line_count = len(image) / line_bytes
+        frames = []
+        # First 3 lines go at once. and wait line_duration
+        frames.append(Frame(image[0:line_bytes*3], duration=line_duration))
+        l_nr = 3
+        while line_count-l_nr >= 0:
+            f_start = 0
+            f_end = 0
+            for n in range(8):
+                f_start = line_bytes*l_nr-3 + display_width*n
+                f_end = line_bytes*l_nr + display_width*n
+                frames.append(Frame(image[f_start:f_end], duration=animate_pause))
+            frames.append(Frame(image[f_start:f_end], duration=line_duration))
+            l_nr += 1
+        frames[-1].duration *= 2  # Give double time to the last frame as this will be removed afterwards.
+        return frames
+        # raise NotImplementedError()
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))

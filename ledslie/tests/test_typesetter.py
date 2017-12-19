@@ -95,4 +95,5 @@ class TestTypesetter(object):
         seq = FrameSequence()
         msg = TextTripleLinesLayout()
         msg.lines = ["Foo", "Bar", "Quux", "Foobar", "FooQuux"]
-        res = tsetter.typeset_3lines(seq, msg)
+        tsetter.typeset_3lines(seq, msg)
+        assert len(seq) > 1
