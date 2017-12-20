@@ -44,12 +44,12 @@ from ledslie.messages import TextTripleLinesLayout
 DestinationCode_to_name = {
     'CS': 'CS',
     'NCS': 'CS',
-    'SLL': 'Lely',
-    'AMS': 'Amtl',
-    'M09501429': 'AirP',
-    'M19501429': 'AirP',
-    'M19505436': 'Lely',
-    'M09505436': 'Lely',
+    'SLL': 'Ly',
+    'AMS': 'AM',
+    'M09501429': 'AP',
+    'M19501429': 'AP',
+    'M19505436': 'Ly',
+    'M09505436': 'Ly',
 }
 DestinationCode_ignore = {  # These are final stops walking distance from the space. No need to waste screen on these.
     'NSN',  # Nieuw Sloten
