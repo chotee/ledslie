@@ -67,6 +67,8 @@ class Typesetter(GenericProcessor):
         Callback Receiving messages from publisher
         '''
         self.log.debug("onPublish topic={topic};q={qos}, msg={payload}", payload=payload, qos=qos, topic=topic)
+        seq_msg = FrameSequence()
+        image_bytes = None
         if topic == LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT:
             font_size = self.config['TYPESETTER_1LINE_DEFAULT_FONT_SIZE']
             image_bytes = self.typeset_1line(payload[:30], font_size)
@@ -79,7 +81,7 @@ class Typesetter(GenericProcessor):
             image_bytes = self.typeset_1line(text, font_size)
         elif topic == LEDSLIE_TOPIC_TYPESETTER_3LINES:
             msg = TextTripleLinesLayout().load(payload)
-            image_bytes = self.typeset_3lines(msg.lines)
+            self.typeset_3lines(seq_msg, msg)
         elif topic.startswith(LEDSLIE_TOPIC_ALERT):
             msg = TextAlertLayout().load(payload)
             frame_seq = self.typeset_alert(topic, msg)
@@ -87,12 +89,12 @@ class Typesetter(GenericProcessor):
             return self.send_frame_sequence(frame_seq)
         else:
             raise NotImplementedError("topic '%s' (%s) is not known" % (topic, type(topic)))
-        if image_bytes is None or "":
+        if image_bytes is None and seq_msg.is_empty():
             return
-        seq_msg = FrameSequence()
         seq_msg.program = msg.program
         seq_msg.valid_time = msg.valid_time
-        seq_msg.frames.append((image_bytes, {'duration': msg.duration}))
+        if seq_msg.is_empty():
+            seq_msg.frames.append((image_bytes, {'duration': msg.duration}))
         self.send_image(seq_msg)
 
     def send_image(self, image_data):
@@ -121,29 +123,63 @@ class Typesetter(GenericProcessor):
         draw.text((0, 0), text, 255, font=font)
         return image.tobytes()
 
-    def typeset_3lines(self, lines):
-        display_width = self.config['DISPLAY_WIDTH']
-        maxchars = self._char_display_width()
+    def typeset_3lines(self, seq: FrameSequence, msg: TextTripleLinesLayout)-> FrameSequence:
+        lines = msg.lines
+        if not lines:
+            return seq
+        # lines = lines[0:3]  # Limit for now.
+        if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
+            missing_lines = 3 - len(lines) % 3
+            for c in range(missing_lines):
+                lines.append("")
         image = bytearray()
-        display_width_bytes = display_width * 8
         for line in lines:  # off all the lines
-            line_image = bytearray(display_width_bytes)
-            for j, c in enumerate(line[:maxchars]):  # Look at each character of a line
-                try:
-                    glyph = font8x8[ord(c)]
-                except KeyError:
-                    glyph = font8x8[ord("?")]
-                xpos = j*8  # Horizontal Position in the line.
-                for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
-                    for x in range(8):  # Look at the bits
-                        if testBit(glyph_line, x) != 0:
-                            line_image[xpos + n * display_width + x] = 0xff
-            image.extend(line_image)
-        return bytes(image)
+            self._markup_line(image, line)
+        duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
+        # if len(lines) <= 3:
+        seq.add_frame(Frame(bytes(image), duration=duration))
+        # else:
+        #     line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+        #     seq.extend(self._animate_vertical_scroll(image, line_duration))
+        return seq
 
-    def _char_display_width(self):
+    def _markup_line(self, image, line):
         display_width = self.config['DISPLAY_WIDTH']
-        return int(display_width / 8)
+        char_display_width = int(display_width / 8)  # maximum number of characters on a line
+        line_image = bytearray(display_width * 8)  # Bytes of the line.
+        for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
+            try:
+                glyph = font8x8[ord(c)]
+            except KeyError:
+                glyph = font8x8[ord("?")]
+            xpos = j * 8  # Horizontal Position in the line.
+            for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
+                for x in range(8):  # Look at the bits
+                    if testBit(glyph_line, x) != 0:
+                        line_image[xpos + n * display_width + x] = 0xff
+        image.extend(line_image)
+
+    def _animate_vertical_scroll(self, image: bytearray, line_duration: int):
+        display_width = self.config['DISPLAY_WIDTH']
+        animate_pause = 30
+        line_bytes = display_width * 8
+        line_count = len(image) / line_bytes
+        frames = []
+        # First 3 lines go at once. and wait line_duration
+        frames.append(Frame(image[0:line_bytes*3], duration=line_duration))
+        l_nr = 3
+        while line_count-l_nr >= 0:
+            f_start = 0
+            f_end = 0
+            for n in range(8):
+                f_start = line_bytes*(l_nr-3) + display_width*n
+                f_end = line_bytes*l_nr + display_width*n
+                frames.append(Frame(image[f_start:f_end], duration=animate_pause))
+            frames.append(Frame(image[f_start:f_end], duration=line_duration))
+            l_nr += 1
+        frames[-1].duration *= 2  # Give double time to the last frame as this will be removed afterwards.
+        return frames
+        # raise NotImplementedError()
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
@@ -162,10 +198,16 @@ class Typesetter(GenericProcessor):
         fs.add_frame(Frame(alert, duration=200))
         fs.add_frame(Frame(alert_neg, duration=200))
         if text:
-            lines = ["From %s" % who, text[:char_width], text[char_width:]]
-            fs.add_frame(Frame(self.typeset_3lines(lines), duration=2000))
+            three_line_msg = TextTripleLinesLayout()
+            three_line_msg.lines = ["From %s" % who, text[:char_width], text[char_width:]]
+            three_line_msg.duration = 2000
+            self.typeset_3lines(fs, three_line_msg)
         fs.prio = "alert"
         return fs
+
+    def _char_display_width(self):
+        display_width = self.config['DISPLAY_WIDTH']
+        return int(display_width / 8)
 
 
 def testBit(int_type, offset):

@@ -12,6 +12,7 @@
     - ledslie-midnight
     - ledslie-events
     - ledslie-coins
+    - ledslie-ovinfo
   become: yes
 
 - name: Start ledslie processer services
@@ -28,6 +29,7 @@
     - ledslie-midnight
     - ledslie-events
     - ledslie-coins
+    - ledslie-ovinfo
   become: yes
   tags:
     - update

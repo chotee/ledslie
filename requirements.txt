@@ -14,3 +14,4 @@ pyasn1-modules
 bs4
 python-dateutil
 pytz
+jsonpath-rw

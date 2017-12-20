@@ -38,7 +38,7 @@ INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
 
 EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
 EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
-EVENTS_DISPLAY_DURATION = 6*1000  # Mili-seconds that information is shown.
+EVENTS_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 
 MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.
@@ -47,3 +47,14 @@ MIDNIGHT_FONT_SIZE        = 16      # Font-size of the message
 COINS_PRICE_SOURCE        = 'https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,BCH,ETH&tsyms=EUR'
 COINS_UPDATE_FREQ         = 5*60  # Seconds between price updates.
 COINS_DISPLAY_DURATION    = 6*1000  # Mili-seconds that information is shown.
+
+
+OVINFO_STOPAREA_URLS      = [  # This defines the different stops we want to know what traffic passes there.
+    'http://v0.ovapi.nl/stopareacode/04088',   # TRAM 2 and Bus 18
+    'http://v0.ovapi.nl/stopareacode/asdlww',  # BUS 195 naar schiphol
+    'http://v0.ovapi.nl/stopareacode/04094',   # Bus 62 naar Lelylaan en Amstelstation
+]
+OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in from the API.
+                                   # All the URLs are hit in this time.
+OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
+OVINFO_LINE_DELAY         = 1000  # Miliseconds per displayed line.
