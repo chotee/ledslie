@@ -55,7 +55,7 @@ class RainContent(GenericContent):
             for rain, t in data:
                 if rain > 0:
                     return "Rain at %s" % t
-            return "Dry for a while"
+            return None
         else:  # It's raining.
             for rain, t in data:
                 if rain == 0:
@@ -80,6 +80,8 @@ class RainContent(GenericContent):
     def publish_forcast(self, forcast_string: str):
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
+        if forcast_string is None:  # There's no Rain information to show.
+            return
         msg = TextSingleLineLayout()
         msg.text = forcast_string
         msg.duration = self.config["RAIN_DISPLAY_DURATION"]
