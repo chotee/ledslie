@@ -135,7 +135,7 @@ class OVInfoContent(GenericContent):
                 continue
             dest_name = DestinationCode_to_name.get(dest_code, dest_code)
             formatted_passes = " ".join(map(self.time_formatter, passes))
-            display_str = "{}→{}|{}".format(line_nr, dest_name, formatted_passes)
+            display_str = "{:>3}{} {}".format(line_nr, dest_name, formatted_passes)
             lines.append(display_str)
         return lines
 
