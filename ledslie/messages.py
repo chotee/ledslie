@@ -50,6 +50,8 @@ class Frame(GenericMessage):
     def raw(self):
         return self.img_data
 
+    def __len__(self):
+        return len(self.img_data)
 
 class FrameSequence(GenericProgram):
     def __init__(self):
@@ -110,6 +112,12 @@ class FrameSequence(GenericProgram):
     def add_frame(self, frame: Frame):
         self.frames.append(frame)
 
+    def extend(self, frames: list):
+        self.frames.extend(frames)
+
+    def is_empty(self):
+        return len(self) == 0
+
     def __len__(self):
         return len(self.frames)
 
@@ -120,7 +128,6 @@ class FrameSequence(GenericProgram):
 class GenericTextLayout(GenericProgram):
     def __init__(self):
         super().__init__()
-        self.program = None
         self.duration = None
 
     def load(self, payload):
@@ -147,10 +154,12 @@ class TextTripleLinesLayout(GenericTextLayout):
     def __init__(self):
         super().__init__()
         self.lines = []
+        self.line_duration = None
 
     def load(self, payload):
         obj_data = super(TextTripleLinesLayout, self).load(payload)
         self.lines = obj_data.get('lines', [])
+        self.line_duration = obj_data.get('line_duration', None)
         return self
 
 

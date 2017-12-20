@@ -48,8 +48,8 @@ class TestEventsContent(object):
         ]
         result = [
             'Tomorrow: ctf',
-            'Wednesday: social',
-            'Sat 02: boardgames',
+            'Wed: social',
+            'Sat02: boardgames',
         ]
         assert result == events.create_event_info(data, now=date(2017, 11, 25))
 
