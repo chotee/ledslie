@@ -136,11 +136,11 @@ class Typesetter(GenericProcessor):
         for line in lines:  # off all the lines
             self._markup_line(image, line)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
-        # if len(lines) <= 3:
-        seq.add_frame(Frame(bytes(image), duration=duration))
-        # else:
-        #     line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
-        #     seq.extend(self._animate_vertical_scroll(image, line_duration))
+        if len(lines) <= 3:
+            seq.add_frame(Frame(bytes(image), duration=duration))
+        else:
+            line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+            seq.extend(self._animate_vertical_scroll(image, line_duration))
         return seq
 
     def _markup_line(self, image, line):
