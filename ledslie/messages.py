@@ -50,6 +50,8 @@ class Frame(GenericMessage):
     def raw(self):
         return self.img_data
 
+    def __len__(self):
+        return len(self.img_data)
 
 class FrameSequence(GenericProgram):
     def __init__(self):

@@ -38,7 +38,7 @@ INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
 
 EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
 EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
-EVENTS_DISPLAY_DURATION = 6*1000  # Mili-seconds that information is shown.
+EVENTS_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 
 MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.
@@ -57,4 +57,4 @@ OVINFO_STOPAREA_URLS      = [  # This defines the different stops we want to kno
 OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in from the API.
                                    # All the URLs are hit in this time.
 OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
-OVINFO_DISPLAY_DURATION   = 3*1000  # Miliseconds the displays willl be visible.
+OVINFO_LINE_DELAY         = 1000  # Miliseconds per displayed line.

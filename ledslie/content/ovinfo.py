@@ -19,7 +19,7 @@ import os
 from datetime import datetime
 from dateutil.parser import parser as date_parser
 from jsonpath_rw.parser import JsonPathParser
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
@@ -171,11 +171,17 @@ class OVInfoContent(GenericContent):
             return
         msg = TextTripleLinesLayout()
         msg.lines = info_lines
-        msg.duration = self.config["OVINFO_DISPLAY_DURATION"]
-        msg.program = 'ovinfo'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
-        d.addCallbacks(_logAll, self._logFailure)
-        return d
+        #msg.line_duration = self.config["OVINFO_LINE_DELAY"]
+        msg.valid_time = 60  # Information is only valid for a minute.
+        nr_of_displays = int(((len(info_lines)-1) / 3))+1
+        d_list = []
+        for display_nr in range(nr_of_displays):
+            msg.program = 'ovinfo%d' % display_nr
+            msg.lines = info_lines[display_nr*3:(display_nr+1)*3]
+            d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
+            d.addCallbacks(_logAll, self._logFailure)
+            d_list.append(d)
+        return DeferredList(d_list)
 
 
 if __name__ == '__main__':

@@ -125,15 +125,22 @@ class Typesetter(GenericProcessor):
 
     def typeset_3lines(self, seq: FrameSequence, msg: TextTripleLinesLayout)-> FrameSequence:
         lines = msg.lines
+        if not lines:
+            return seq
+        # lines = lines[0:3]  # Limit for now.
+        if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
+            missing_lines = 3 - len(lines) % 3
+            for c in range(missing_lines):
+                lines.append("")
         image = bytearray()
         for line in lines:  # off all the lines
             self._markup_line(image, line)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
-        if len(lines) <= 3:
-            seq.add_frame(Frame(bytes(image), duration=duration))
-        else:
-            line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
-            seq.extend(self._animate_vertical_scroll(image, line_duration))
+        # if len(lines) <= 3:
+        seq.add_frame(Frame(bytes(image), duration=duration))
+        # else:
+        #     line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+        #     seq.extend(self._animate_vertical_scroll(image, line_duration))
         return seq
 
     def _markup_line(self, image, line):
@@ -165,7 +172,7 @@ class Typesetter(GenericProcessor):
             f_start = 0
             f_end = 0
             for n in range(8):
-                f_start = line_bytes*l_nr-3 + display_width*n
+                f_start = line_bytes*(l_nr-3) + display_width*n
                 f_end = line_bytes*l_nr + display_width*n
                 frames.append(Frame(image[f_start:f_end], duration=animate_pause))
             frames.append(Frame(image[f_start:f_end], duration=line_duration))
