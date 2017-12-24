@@ -1,30 +1,30 @@
 - name: Installing systemd content templates
   template:
-    src: "{{ item }}.service"
-    dest: "/etc/systemd/system/{{ item }}.service"
+    src: "ledslie-content.service-tmpl"
+    dest: "/etc/systemd/system/ledslie-{{ item }}.service"
   with_items:
-    - ledslie-clock
-    - ledslie-coins
-    - ledslie-events
-    - ledslie-info
-    - ledslie-midnight
-    - ledslie-ovinfo
-    - ledslie-rain
+    - clock
+    - coins
+    - events
+    - info
+    - midnight
+    - ovinfo
+    - rain
   become: yes
 
 - name: Start ledslie processer services
   systemd:
-    name: "{{ item }}"
+    name: "ledslie-{{ item }}"
     state: restarted
     enabled: yes
   with_items:
-    - ledslie-clock
-    - ledslie-coins
-    - ledslie-events
-    - ledslie-info
-    - ledslie-midnight
-    - ledslie-ovinfo
-    - ledslie-rain
+    - clock
+    - coins
+    - events
+    - info
+    - midnight
+    - ovinfo
+    - rain
   become: yes
   tags:
     - update
