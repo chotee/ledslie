@@ -1,4 +1,4 @@
-- name: Installing systemd templates
+- name: Installing systemd processor templates
   template:
     src: "{{ item }}.service"
     dest: "/etc/systemd/system/{{ item }}.service"
@@ -6,13 +6,6 @@
     - ledslie-scheduler
     - ledslie-serializer
     - ledslie-typesetter
-    - ledslie-clock
-    - ledslie-info
-    - ledslie-rain
-    - ledslie-midnight
-    - ledslie-events
-    - ledslie-coins
-    - ledslie-ovinfo
   become: yes
 
 - name: Start ledslie processer services
@@ -24,12 +17,6 @@
     - ledslie-scheduler
     - ledslie-serializer
     - ledslie-typesetter
-    - ledslie-clock
-    - ledslie-info
-    - ledslie-midnight
-    - ledslie-events
-    - ledslie-coins
-    - ledslie-ovinfo
   become: yes
   tags:
     - update
