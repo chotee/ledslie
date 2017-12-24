@@ -8,7 +8,8 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_S
 from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-from ledslie.processors.scheduler import Catalog, AnimateStill
+from ledslie.processors.scheduler import Catalog
+from ledslie.processors.animate import AnimateStill
 
 
 class TestCatalog(object):
@@ -159,6 +160,6 @@ class TestScheduler(object):
         seq = FrameSequence()
         img_data = bytes(bytearray(Config().get('DISPLAY_SIZE')))
         seq.add_frame(Frame(img_data, 2000))
-        animated_seq = AnimateStill(seq)
+        animated_seq = AnimateStill(seq[0])
         assert Config().get('DISPLAY_HEIGHT') == len(animated_seq)
         assert sum([frame.duration for frame in animated_seq.frames])

@@ -43,6 +43,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
     LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
     LEDSLIE_TOPIC_ALERT
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence, TextAlertLayout, Frame
+from ledslie.processors.animate import AnimateVerticalScroll
 from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
@@ -140,7 +141,7 @@ class Typesetter(GenericProcessor):
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
             line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
-            seq.extend(self._animate_vertical_scroll(image, line_duration))
+            seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
 
     def _markup_line(self, image, line):
@@ -158,34 +159,6 @@ class Typesetter(GenericProcessor):
                     if testBit(glyph_line, x) != 0:
                         line_image[xpos + n * display_width + x] = 0xff
         image.extend(line_image)
-
-    def _animate_vertical_scroll(self, image: bytearray, line_duration: int) -> list:
-        """
-        I let the content of a longer image scroll vertically up.
-        :param image: The image that there is to scroll.
-        :type image: bytearray
-        :param line_duration: The duration in ms that each line should be shown.
-        :type line_duration: int
-        :return: List of frames that make up the scrolling motion.
-        :rtype: list
-        """
-        display_width = self.config['DISPLAY_WIDTH']
-        animate_duration = self.config['TYPESETTER_ANIMATE_VERTICAL_SCROLL_DELAY']
-        nr_of_lines = len(image) / display_width  # nr of lines does the whole image has.
-        nr_of_scroll = int(nr_of_lines - self.config['DISPLAY_HEIGHT'])  # number of lines there are to scroll
-        f_start = 0
-        f_end = self.config['DISPLAY_SIZE']
-        frames = []
-        for nr in range(nr_of_scroll):
-            if nr % 8 == 0:  # On a full line, show for longer.
-                duration = line_duration
-            else:
-                duration = animate_duration
-            frames.append(Frame(image[f_start:f_end], duration=duration))
-            f_start += display_width
-            f_end += display_width
-        return frames
-        # raise NotImplementedError()
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
