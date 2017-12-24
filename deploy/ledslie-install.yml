@@ -5,3 +5,4 @@
     - { role: mosquitto, become: yes }
     - role: ledslie-site
     - role: ledslie-processors
+    - role: ledslie-content

@@ -57,4 +57,4 @@ OVINFO_STOPAREA_URLS      = [  # This defines the different stops we want to kno
 OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in from the API.
                                    # All the URLs are hit in this time.
 OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
-OVINFO_LINE_DELAY         = 1000  # Miliseconds per displayed line.
+OVINFO_LINE_DELAY         = 2500  # Miliseconds per displayed line.
