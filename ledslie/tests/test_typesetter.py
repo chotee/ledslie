@@ -91,7 +91,16 @@ class TestTypesetter(object):
         monkeypatch.setattr("PIL.ImageFont.truetype", typetype)
         tsetter.typeset_1line(text, font_size)
 
-    def test_typeset_3lines(self, tsetter):
+    def test_typeset_3lines_single(self, tsetter):
+        seq = FrameSequence()
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo", "Bar"]
+        tsetter.typeset_3lines(seq, msg)
+        assert len(seq) == 1
+        for f in seq.frames:
+            assert len(f) == Config()['DISPLAY_SIZE']
+
+    def test_typeset_3lines_multi(self, tsetter):
         seq = FrameSequence()
         msg = TextTripleLinesLayout()
         msg.lines = ["Foo", "Bar", "Quux", "Foobar", "FooQuux"]

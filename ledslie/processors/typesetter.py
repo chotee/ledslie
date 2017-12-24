@@ -128,15 +128,15 @@ class Typesetter(GenericProcessor):
         if not lines:
             return seq
         # lines = lines[0:3]  # Limit for now.
-        if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
-            missing_lines = 3 - len(lines) % 3
-            for c in range(missing_lines):
-                lines.append("")
         image = bytearray()
         for line in lines:  # off all the lines
             self._markup_line(image, line)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
         if len(lines) <= 3:
+            if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
+                missing_lines = 3 - len(lines) % 3
+                for c in range(missing_lines):
+                    self._markup_line(image, "")
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
             line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
@@ -159,25 +159,31 @@ class Typesetter(GenericProcessor):
                         line_image[xpos + n * display_width + x] = 0xff
         image.extend(line_image)
 
-    def _animate_vertical_scroll(self, image: bytearray, line_duration: int):
+    def _animate_vertical_scroll(self, image: bytearray, line_duration: int) -> list:
+        """
+        I let the content of a longer image scroll vertically up.
+        :param image: The image that there is to scroll.
+        :type image: bytearray
+        :param line_duration: The duration in ms that each line should be shown.
+        :type line_duration: int
+        :return: List of frames that make up the scrolling motion.
+        :rtype: list
+        """
         display_width = self.config['DISPLAY_WIDTH']
-        animate_pause = 30
-        line_bytes = display_width * 8
-        line_count = len(image) / line_bytes
+        animate_duration = self.config['TYPESETTER_ANIMATE_VERTICAL_SCROLL_DELAY']
+        nr_of_lines = len(image) / display_width  # nr of lines does the whole image has.
+        nr_of_scroll = int(nr_of_lines - self.config['DISPLAY_HEIGHT'])  # number of lines there are to scroll
+        f_start = 0
+        f_end = self.config['DISPLAY_SIZE']
         frames = []
-        # First 3 lines go at once. and wait line_duration
-        frames.append(Frame(image[0:line_bytes*3], duration=line_duration))
-        l_nr = 3
-        while line_count-l_nr >= 0:
-            f_start = 0
-            f_end = 0
-            for n in range(8):
-                f_start = line_bytes*(l_nr-3) + display_width*n
-                f_end = line_bytes*l_nr + display_width*n
-                frames.append(Frame(image[f_start:f_end], duration=animate_pause))
-            frames.append(Frame(image[f_start:f_end], duration=line_duration))
-            l_nr += 1
-        frames[-1].duration *= 2  # Give double time to the last frame as this will be removed afterwards.
+        for nr in range(nr_of_scroll):
+            if nr % 8 == 0:  # On a full line, show for longer.
+                duration = line_duration
+            else:
+                duration = animate_duration
+            frames.append(Frame(image[f_start:f_end], duration=duration))
+            f_start += display_width
+            f_end += display_width
         return frames
         # raise NotImplementedError()
 
