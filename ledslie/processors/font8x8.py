@@ -1,7 +1,5 @@
 # From https://github.com/dhepper/font8x8 , Public Domain
-
-
-
+# Glyph is 8 bytes. One byte for each row.
 
 font8x8 = {
     0x0000: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],  # U+0000 (nul)

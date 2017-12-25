@@ -24,6 +24,7 @@ DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
 
 TYPESETTER_1LINE_DEFAULT_FONT_SIZE = 20
+TYPESETTER_ANIMATE_VERTICAL_SCROLL_DELAY = 30  # ms to wait between each scrolling frame.
 
 PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 30 minutes.
 ALERT_RETIREMENT_AGE   = 5*60   # Age in seconds before a alert is removed

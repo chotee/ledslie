@@ -20,7 +20,7 @@ class TestRain(object):
             [0, '00:05'],
             [0, '00:10'],
         ]
-        assert "Dry for a while" == rain.create_forcast(data)
+        assert rain.create_forcast(data) is None
 
         data = [
             [0, '00:00'],

@@ -34,7 +34,8 @@ from twisted.logger import Logger
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_SERIALIZER, ALERT_PRIO_STRING
-from ledslie.messages import FrameSequence, Frame, SerializeFrame
+from ledslie.messages import FrameSequence
+from ledslie.processors.animate import AnimateStill
 from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
@@ -42,21 +43,6 @@ from ledslie.processors.service import CreateService, GenericProcessor
 # ----------------
 
 log = Logger()
-
-
-def AnimateStill(seq: FrameSequence):
-    still = seq[0]
-    width, height = Config().get('DISPLAY_WIDTH'), Config().get('DISPLAY_HEIGHT')
-    seq_duration = still.duration
-    steps_ms = int(seq_duration / height)
-    still_img = still.raw()
-    still.duration = steps_ms
-    for nr in range(1, height):
-        frame = bytearray(still_img)
-        frame[width*nr-1] = 0xff
-        seq.add_frame(Frame(bytes(frame), steps_ms))
-    seq[-1].duration += seq_duration - seq.duration  # Add the steps_ms missing because of the division.
-    return seq
 
 
 class Catalog(object):
@@ -147,7 +133,7 @@ class Scheduler(GenericProcessor):
         if seq is None:
             return
         if len(seq) == 1:
-            seq = AnimateStill(seq)
+            seq = AnimateStill(seq[0])
         self.catalog.add_program(program_id, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
