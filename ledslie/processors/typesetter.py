@@ -44,11 +44,18 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
     LEDSLIE_TOPIC_ALERT
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence, TextAlertLayout, Frame
 from ledslie.processors.animate import AnimateVerticalScroll
+from ledslie.processors.font5x7 import font5x7
 from ledslie.processors.font8x8 import font8x8
 from ledslie.processors.service import GenericProcessor, CreateService
 
 SCRIPT_DIR = os.path.split(__file__)[0]
 os.chdir(SCRIPT_DIR)
+
+FontMapping = {
+    '8x8': font8x8,
+    '5x7': font5x7,
+}
+
 
 class Typesetter(GenericProcessor):
     subscriptions = (
@@ -125,34 +132,35 @@ class Typesetter(GenericProcessor):
         return image.tobytes()
 
     def typeset_3lines(self, seq: FrameSequence, msg: TextTripleLinesLayout)-> FrameSequence:
+        font = FontMapping[msg.size]
         lines = msg.lines
         if not lines:
             return seq
         # lines = lines[0:3]  # Limit for now.
         image = bytearray()
         for line in lines:  # off all the lines
-            self._markup_line(image, line)
+            self._markup_line(image, line, font)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
         if len(lines) <= 3:
             if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
                 missing_lines = 3 - len(lines) % 3
                 for c in range(missing_lines):
-                    self._markup_line(image, "")
+                    self._markup_line(image, "", font)
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
             line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
             seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
 
-    def _markup_line(self, image, line):
+    def _markup_line(self, image, line, font):
         display_width = self.config['DISPLAY_WIDTH']
         char_display_width = int(display_width / 8)  # maximum number of characters on a line
         line_image = bytearray(display_width * 8)  # Bytes of the line.
         for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
             try:
-                glyph = font8x8[ord(c)]
+                glyph = font[ord(c)]
             except KeyError:
-                glyph = font8x8[ord("?")]
+                glyph = font[ord("?")]
             xpos = j * 8  # Horizontal Position in the line.
             for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
                 for x in range(8):  # Look at the bits

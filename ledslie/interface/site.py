@@ -80,12 +80,14 @@ def text1():
 @app.route('/text3', methods=['POST'])
 def text3():
     lines = request.form['l1'], request.form['l2'], request.form['l3']
+    size = request.form['size']
     duration = int(request.form['duration'])
     program = request.form['program']
     set_data = {
         'lines': lines,
         'duration': duration,
         'program': program,
+        'size': size,
     }
     payload = json.dumps(set_data)
     mqtt.publish(LEDSLIE_TOPIC_TYPESETTER_3LINES, payload)
