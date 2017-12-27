@@ -171,7 +171,7 @@ class OVInfoContent(GenericContent):
             return
         msg = TextTripleLinesLayout()
         msg.lines = info_lines
-        msg.duration = self.config["OVINFO_LINE_DELAY"]
+        msg.line_duration = self.config["OVINFO_LINE_DELAY"]
         msg.valid_time = 60  # Information is only valid for a minute.
         msg.program = 'ovinfo'
         msg.size = '6x7'

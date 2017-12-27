@@ -71,4 +71,5 @@ def AnimateVerticalScroll(image: bytearray, line_duration: int) -> list:
         frames.append(Frame(image[f_start:f_end], duration=duration))
         f_start += display_width
         f_end += display_width
+    frames.append(Frame(image[-config['DISPLAY_SIZE']:], duration=line_duration))
     return frames
