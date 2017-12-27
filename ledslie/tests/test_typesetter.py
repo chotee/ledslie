@@ -152,7 +152,7 @@ class TestTypesetter(object):
         tsetter.typeset_3lines(seq, msg)
         assert frame_font_default == seq[-1].raw()
 
-        msg.size = '5x7'
+        msg.size = '6x7'
         tsetter.typeset_3lines(seq, msg)
         assert frame_font_default != seq[-1].raw()
 

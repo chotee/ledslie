@@ -42,7 +42,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
     LEDSLIE_TOPIC_ALERT
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence, TextAlertLayout, Frame
 from ledslie.processors.animate import AnimateVerticalScroll
-from ledslie.bitfont.font5x7 import font5x7
+from ledslie.bitfont.font6x7 import font6x7
 from ledslie.bitfont.font8x8 import font8x8
 from ledslie.bitfont.generic import GenericFont
 from ledslie.processors.service import GenericProcessor, CreateService
@@ -52,8 +52,8 @@ os.chdir(SCRIPT_DIR)
 
 FontMapping = {
     '8x8': font8x8,
-    '5x7': font5x7,
-    '7x5': font5x7,
+    '6x7': font6x7,
+    '7x6': font6x7,
 }
 
 
@@ -154,7 +154,7 @@ class Typesetter(GenericProcessor):
 
     def _markup_line(self, image: bytearray, line: str, font: GenericFont):
         display_width = self.config['DISPLAY_WIDTH']
-        char_display_width = int(display_width / 8)  # maximum number of characters on a line
+        char_display_width = int(display_width / font.width)  # maximum number of characters on a line
         line_image = bytearray(display_width * 8)  # Bytes of the line.
         for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
             try:

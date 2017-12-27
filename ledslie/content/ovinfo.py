@@ -174,7 +174,7 @@ class OVInfoContent(GenericContent):
         msg.duration = self.config["OVINFO_LINE_DELAY"]
         msg.valid_time = 60  # Information is only valid for a minute.
         msg.program = 'ovinfo'
-        msg.size = '7x5'
+        msg.size = '6x7'
         msg.lines = info_lines
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)

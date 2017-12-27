@@ -17,6 +17,17 @@
 
 class GenericFont(dict):
     def __init__(self, width, height, characters):
+        """
+        I'm a generic representation of a Bit Font for led display.
+
+        :param width: Number of bits/LEDs that the font is wide
+        :type width: int
+        :param height: Number of bits/LEDs that the font is tall
+        :type height: int
+        :param characters: Dict with the font characters. THe key is the Unicode number and value a list with one entry
+        per row.
+        :type characters: dict
+        """
         super().__init__(characters)
         self.width = width
         self.height = height
