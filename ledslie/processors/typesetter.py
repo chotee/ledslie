@@ -46,6 +46,7 @@ from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameS
 from ledslie.processors.animate import AnimateVerticalScroll
 from ledslie.processors.font5x7 import font5x7
 from ledslie.processors.font8x8 import font8x8
+from ledslie.processors.genericfont import GenericFont
 from ledslie.processors.service import GenericProcessor, CreateService
 
 SCRIPT_DIR = os.path.split(__file__)[0]
@@ -54,6 +55,7 @@ os.chdir(SCRIPT_DIR)
 FontMapping = {
     '8x8': font8x8,
     '5x7': font5x7,
+    '7x5': font5x7,
 }
 
 
@@ -152,7 +154,7 @@ class Typesetter(GenericProcessor):
             seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
 
-    def _markup_line(self, image, line, font):
+    def _markup_line(self, image: bytearray, line: str, font: GenericFont):
         display_width = self.config['DISPLAY_WIDTH']
         char_display_width = int(display_width / 8)  # maximum number of characters on a line
         line_image = bytearray(display_width * 8)  # Bytes of the line.
@@ -161,7 +163,7 @@ class Typesetter(GenericProcessor):
                 glyph = font[ord(c)]
             except KeyError:
                 glyph = font[ord("?")]
-            xpos = j * 8  # Horizontal Position in the line.
+            xpos = j * font.width  # Horizontal Position in the line.
             for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
                 for x in range(8):  # Look at the bits
                     if testBit(glyph_line, x) != 0:

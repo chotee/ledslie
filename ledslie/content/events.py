@@ -97,6 +97,7 @@ class EventsContent(GenericContent):
         msg.lines = event_lines
         msg.duration = self.config["EVENTS_DISPLAY_DURATION"]
         msg.program = 'events'
+        msg.size = '7x5'
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
