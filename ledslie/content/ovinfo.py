@@ -171,17 +171,14 @@ class OVInfoContent(GenericContent):
             return
         msg = TextTripleLinesLayout()
         msg.lines = info_lines
-        msg.duration = self.config["OVINFO_LINE_DELAY"]*3
+        msg.line_duration = self.config["OVINFO_LINE_DELAY"]
         msg.valid_time = 60  # Information is only valid for a minute.
-        nr_of_displays = int(((len(info_lines)-1) / 3))+1
-        d_list = []
-        for display_nr in range(nr_of_displays):
-            msg.program = 'ovinfo%d' % display_nr
-            msg.lines = info_lines[display_nr*3:(display_nr+1)*3]
-            d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
-            d.addCallbacks(_logAll, self._logFailure)
-            d_list.append(d)
-        return DeferredList(d_list)
+        msg.program = 'ovinfo'
+        msg.size = '6x7'
+        msg.lines = info_lines
+        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
+        d.addCallbacks(_logAll, self._logFailure)
+        return d
 
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 import pytest
 import json
 
+from pytest import fail
+
 import ledslie.processors.typesetter
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT, LEDSLIE_TOPIC_TYPESETTER_1LINE, \
     LEDSLIE_TOPIC_TYPESETTER_3LINES, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED
@@ -87,15 +89,76 @@ class TestTypesetter(object):
         font_size = 13
         text = "lala"
         def typetype(font_path, font_size):
-            assert font_size == 13
+            assert 13 == font_size
         monkeypatch.setattr("PIL.ImageFont.truetype", typetype)
         tsetter.typeset_1line(text, font_size)
 
-    def test_typeset_3lines(self, tsetter):
+    def test_typeset_3lines_none(self, tsetter):
+        """
+        I test the behaviour when 3lines gets empty lines or None. No Frame should be put onto the FrameSequence.
+        """
+        seq = FrameSequence()
+        msg = TextTripleLinesLayout()
+        msg.lines = []
+        tsetter.typeset_3lines(seq, msg)
+        assert 0 == len(seq)
+        msg.lines = None
+        tsetter.typeset_3lines(seq, msg)
+        assert 0 == len(seq)
+
+    def test_typeset_3lines_single(self, tsetter):
+        seq = FrameSequence()
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo", "Bar"]
+        tsetter.typeset_3lines(seq, msg)
+        assert 1 == len(seq)
+        for f in seq.frames:
+            assert len(f) == Config()['DISPLAY_SIZE']
+
+    def test_typeset_3lines_multi(self, tsetter):
         seq = FrameSequence()
         msg = TextTripleLinesLayout()
         msg.lines = ["Foo", "Bar", "Quux", "Foobar", "FooQuux"]
         tsetter.typeset_3lines(seq, msg)
-        # assert len(seq) > 1
-        # for f in seq.frames:
-        #     assert len(f) == Config()['DISPLAY_SIZE']
+        assert len(seq) > 1
+        for f in seq.frames:
+            assert len(f) == Config()['DISPLAY_SIZE']
+
+    def test_typeset_3lines_appends(self, tsetter):
+        """
+        I test that typeset_3lines appends new frames to the end of the sequence.
+        """
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo"]
+        seq = FrameSequence()
+        tsetter.typeset_3lines(seq, msg)
+        assert 1 == len(seq)
+        frame1 = seq[-1].raw()
+        msg.lines = ["Bar"]
+        tsetter.typeset_3lines(seq, msg)
+        assert 2 == len(seq)
+        assert frame1 != seq[-1].raw()
+
+    def test_typeset_3lines_font(self, tsetter):
+        """
+        I test different fonts for 3lines.
+        """
+        msg = TextTripleLinesLayout()
+        msg.lines = ["Foo"]
+        seq = FrameSequence()
+        tsetter.typeset_3lines(seq, msg)
+        frame_font_default = seq[-1].raw()
+        msg.size = '8x8'
+        tsetter.typeset_3lines(seq, msg)
+        assert frame_font_default == seq[-1].raw()
+
+        msg.size = '6x7'
+        tsetter.typeset_3lines(seq, msg)
+        assert frame_font_default != seq[-1].raw()
+
+        msg.size = '1x1'
+        try:
+            tsetter.typeset_3lines(seq, msg)
+            fail("Should not get here.")
+        except KeyError:
+            pass

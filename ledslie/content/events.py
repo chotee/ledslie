@@ -69,7 +69,7 @@ class EventsContent(GenericContent):
 
     def create_event_info(self, event_data, now=None):
         lines = []
-        for event_name, event_date in event_data[:3]:
+        for event_name, event_date in event_data[:5]:
             date_str = create_date_string(event_date, now)
             lines.append("%s: %s" % (date_str, event_name))
         return lines
@@ -97,6 +97,7 @@ class EventsContent(GenericContent):
         msg.lines = event_lines
         msg.duration = self.config["EVENTS_DISPLAY_DURATION"]
         msg.program = 'events'
+        msg.size = '6x7'
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
