@@ -28,8 +28,6 @@ OR
 
 """
 
-# Start without arguments it's the typesetter
-# Start with arguments "show 'hello world'" and it will show you how 'hello world' will be rendered.
 import os
 
 from PIL import Image
@@ -44,9 +42,9 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
     LEDSLIE_TOPIC_ALERT
 from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout, FrameSequence, TextAlertLayout, Frame
 from ledslie.processors.animate import AnimateVerticalScroll
-from ledslie.processors.font5x7 import font5x7
-from ledslie.processors.font8x8 import font8x8
-from ledslie.processors.genericfont import GenericFont
+from ledslie.bitfont.font5x7 import font5x7
+from ledslie.bitfont.font8x8 import font8x8
+from ledslie.bitfont.generic import GenericFont
 from ledslie.processors.service import GenericProcessor, CreateService
 
 SCRIPT_DIR = os.path.split(__file__)[0]

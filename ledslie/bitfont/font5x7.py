@@ -11,7 +11,7 @@
 # 0x11 5  X . . . X
 # 0x0e 6  . X X X .
 
-from ledslie.processors.genericfont import GenericFont
+from .generic import GenericFont
 
 font5x7 = GenericFont(5, 7, {
     0x0020: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],  # U+0020 ( )
