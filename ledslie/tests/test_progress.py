@@ -1,3 +1,5 @@
+import base64
+import json
 from datetime import datetime
 
 import pytest
@@ -20,7 +22,8 @@ class TestProgress(object):
         progress.publishProgress()
         assert 1 == len(progress.protocol._published_messages)
         assert progress.protocol._published_messages[-1][0].endswith("/progress")
-        assert Config()["DISPLAY_SIZE"] == len(progress.protocol._published_messages[-1][1])
+        frame = base64.b64decode(json.loads(progress.protocol._published_messages[-1][1].decode())[0][0][0])
+        assert Config()["DISPLAY_SIZE"] == len(frame)
 
     def test_create_day_progress(self, progress):
         assert "00:00         0.0%" == progress._create_day_progress(datetime(2017, 12, 31,  0,  0, 0))[0]
