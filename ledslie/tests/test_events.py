@@ -44,14 +44,18 @@ class TestEventsContent(object):
             ['ctf', date(2017, 11, 26)],  # Tomorrow
             ['social', date(2017, 11, 29)],  # Wednesday
             ['boardgames', date(2017, 12, 2)],  # Sat 02
-            ['something else', date(2017, 12, 5)],  # Tue 05 # Not to be added.
+            ['something else', date(2017, 12, 5)],  # Tue 05
+            ['something else2', date(2017, 12, 7)],  # Tue 07
+            ['something else3', date(2017, 12, 9)],  # Tue 09 # Not to be added.
         ]
-        result = [
+        expected = [
             'Tomorrow: ctf',
             'Wed: social',
             'Sat02: boardgames',
+            'Tue05: something else',
+            'Thu07: something else2',
         ]
-        assert result == events.create_event_info(data, now=date(2017, 11, 25))
+        assert expected == events.create_event_info(data, now=date(2017, 11, 25))
 
     def test_publish_events(self, events: EventsContent):
         events.publish_events(["One", "Two", "Three"])

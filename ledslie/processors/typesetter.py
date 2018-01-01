@@ -57,6 +57,23 @@ FontMapping = {
 }
 
 
+def MarkupLine(image: bytearray, line: str, font: GenericFont):
+    display_width = Config()['DISPLAY_WIDTH']
+    char_display_width = int(display_width / font.width)  # maximum number of characters on a line
+    line_image = bytearray(display_width * 8)  # Bytes of the line.
+    for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
+        try:
+            glyph = font[ord(c)]
+        except KeyError:
+            glyph = font[ord("?")]
+        xpos = j * font.width  # Horizontal Position in the line.
+        for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
+            for x in range(8):  # Look at the bits
+                if testBit(glyph_line, x) != 0:
+                    line_image[xpos + n * display_width + x] = 0xff
+    image.extend(line_image)
+
+
 class Typesetter(GenericProcessor):
     subscriptions = (
         (LEDSLIE_TOPIC_TYPESETTER_1LINE, 1),
@@ -139,34 +156,18 @@ class Typesetter(GenericProcessor):
         # lines = lines[0:3]  # Limit for now.
         image = bytearray()
         for line in lines:  # off all the lines
-            self._markup_line(image, line, font)
+            MarkupLine(image, line, font)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
         if len(lines) <= 3:
             if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
                 missing_lines = 3 - len(lines) % 3
                 for c in range(missing_lines):
-                    self._markup_line(image, "", font)
+                    MarkupLine(image, "", font)
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
             line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
             seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
-
-    def _markup_line(self, image: bytearray, line: str, font: GenericFont):
-        display_width = self.config['DISPLAY_WIDTH']
-        char_display_width = int(display_width / font.width)  # maximum number of characters on a line
-        line_image = bytearray(display_width * 8)  # Bytes of the line.
-        for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
-            try:
-                glyph = font[ord(c)]
-            except KeyError:
-                glyph = font[ord("?")]
-            xpos = j * font.width  # Horizontal Position in the line.
-            for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
-                for x in range(8):  # Look at the bits
-                    if testBit(glyph_line, x) != 0:
-                        line_image[xpos + n * display_width + x] = 0xff
-        image.extend(line_image)
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))

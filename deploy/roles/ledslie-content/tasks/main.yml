@@ -3,7 +3,7 @@
     src: "ledslie-content.service-tmpl"
     dest: "/etc/systemd/system/ledslie-{{ item }}.service"
   with_items:
-    - clock
+    - progress
     - coins
     - events
     - info
@@ -18,7 +18,7 @@
     state: restarted
     enabled: yes
   with_items:
-    - clock
+    - progress
     - coins
     - events
     - info

@@ -30,6 +30,8 @@ PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 
 ALERT_RETIREMENT_AGE   = 5*60   # Age in seconds before a alert is removed
 ALERT_INITIAL_REPEAT   = 5      # Number of times an alert is repeated before it is seen as a normal program.
 
+PROGRESS_DISPLAY_DURATION = 4*1000  # Miliseconds that the progress message is shown.
+
 RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.34557&lon=4.82647"
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 3*1000  # Mili-Seconds that the rain message is shown.
