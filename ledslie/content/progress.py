@@ -1,5 +1,5 @@
 # Ledslie, a community information display
-# Copyright (C) 2017  Chotee@openended.eu
+# Copyright (C) 2018  Chotee@openended.eu
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -13,18 +13,20 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from calendar import monthrange
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import os
 from twisted.internet import reactor, task
-from twisted.internet.defer import inlineCallbacks
 from twisted.logger import Logger
 
+from ledslie.bitfont.font8x8 import font8x8
 from ledslie.config import Config
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
+from ledslie.messages import FrameSequence, Frame
 from ledslie.content.generic import GenericContent, CreateContent
+from ledslie.processors.typesetter import MarkupLine
 
 
 class Progress(GenericContent):
@@ -45,16 +47,33 @@ class Progress(GenericContent):
             self.log.debug("all publishing complete args={args!r}", args=args)
 
         # self.log.debug(" >< Starting one round of publishing >< ")
-        msg = TextTripleLinesLayout()
-        msg.duration = self.config['PROGRESS_DISPLAY_DURATION']
         now = datetime.now()
-        msg.lines[0] = self._create_day_progress(now)
-        msg.lines[1] = self._create_month_progress(now)
-        msg.lines[2] = self._create_year_progress(now)
-        msg.program = 'progress'
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg)
+        seq = FrameSequence()
+        image = bytearray()
+        image.extend(self._create_graph_line(self._create_day_progress(now)))
+        image.extend(self._create_graph_line(self._create_month_progress(now)))
+        image.extend(self._create_graph_line(self._create_year_progress(now)))
+        frame = Frame(bytes(image), duration=self.config['PROGRESS_DISPLAY_DURATION'])
+        seq.add_frame(frame)
+        seq.program = "progress"
+        d = self.publish(topic=LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + seq.program, message=seq)
         d.addCallbacks(_logAll, _logFailure)
         return d
+
+    def _create_graph_line(self, values):
+        string, fraction = values
+        line = bytearray()
+        MarkupLine(line, string, font8x8)
+        display_width = Config()['DISPLAY_WIDTH']
+        line_location = int(display_width * fraction)
+        for x in range(8):
+            begin = x*display_width
+            end = x*display_width+line_location
+            c = begin
+            while c < end:
+                line[c] = (~(line[c]) & 0xff)
+                c += 1
+        return line
 
     def _create_day_progress(self, now):
         fraction = (now.hour*60*60 + now.minute*60 + now.second) / (24*60*60.0)
@@ -77,6 +96,7 @@ class Progress(GenericContent):
         time_string = "Day {}".format(year_day, now.year)
         line_string = "{:12s}{:6.1%}".format(time_string, fraction)
         return line_string, fraction
+
 
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
