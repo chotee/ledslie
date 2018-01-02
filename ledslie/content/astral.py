@@ -59,19 +59,11 @@ class AstralContent(GenericContent):
 
         moon_msg = self.moon_message(now)
         if moon_msg:
-            msg = TextSingleLineLayout()
-            msg.text = moon_msg
-            msg.program = 'moon'
-            msg.valid_time = 60
-            deferreds.append(self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg))
+            deferreds.append(self._create_msg('moon', moon_msg))
 
         solar_msg = self.sun_message(now)
         if solar_msg:
-            msg = TextSingleLineLayout()
-            msg.text = solar_msg
-            msg.program = 'solar'
-            msg.valid_time = 60
-            deferreds.append(self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg))
+            deferreds.append(self._create_msg('solar', solar_msg))
 
         if deferreds:
             dl = DeferredList(deferreds)
@@ -79,6 +71,14 @@ class AstralContent(GenericContent):
             return dl
         else:
             return None
+
+    def _create_msg(self, prog_name, solar_msg):
+        msg = TextSingleLineLayout()
+        msg.text = solar_msg
+        msg.program = prog_name
+        msg.valid_time = 60
+        msg.font_size = 15
+        return self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg)
 
     def _now(self, dt=None):
         dt = datetime.now() if dt is None else dt
