@@ -32,7 +32,10 @@ ALERT_INITIAL_REPEAT   = 5      # Number of times an alert is repeated before it
 
 PROGRESS_DISPLAY_DURATION = 4*1000  # Miliseconds that the progress message is shown.
 
-RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.34557&lon=4.82647"
+LOCATION_LAT = 52.34557
+LOCATION_LON =  4.82647
+
+RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=%s&lon=%s" % (LOCATION_LAT, LOCATION_LON)
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 3*1000  # Mili-Seconds that the rain message is shown.
 

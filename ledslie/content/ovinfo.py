@@ -19,7 +19,7 @@ import os
 from datetime import datetime
 from dateutil.parser import parser as date_parser
 from jsonpath_rw.parser import JsonPathParser
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import Deferred
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
