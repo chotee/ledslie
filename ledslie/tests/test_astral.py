@@ -15,6 +15,26 @@ class TestAstralContent(object):
         astral.connectToBroker(FakeMqttProtocol())
         return astral
 
+    def test_publish_astral(self, astral: AstralContent):
+        # moon message
+        astral.publish_astral(datetime(2018, 1, 8, 12, 0, 0))
+        assert 1 == len(astral.protocol._published_messages)
+        astral.protocol._published_messages = []
+
+        # Solar message
+        astral.publish_astral(datetime(2018, 1, 1, 12, 30, 0))
+        assert 1 == len(astral.protocol._published_messages)
+        astral.protocol._published_messages = []
+
+        # Moon and Solar message
+        astral.publish_astral(datetime(2018, 1, 8, 12, 30, 0))
+        assert 2 == len(astral.protocol._published_messages)
+        astral.protocol._published_messages = []
+
+        # No astral message.
+        res = astral.publish_astral(datetime(2018, 1, 1, 15, 30, 0))
+        assert res is None
+
     def test_moon_message(self, astral: AstralContent):
         assert None == astral.moon_message(datetime(2018, 1, 1, 12, 0, 0))
         assert "Full moon" == astral.moon_message(datetime(2018, 1, 8, 12, 0, 0))

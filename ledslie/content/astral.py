@@ -15,20 +15,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from datetime import datetime
 
 from twisted.internet import reactor, task
+from twisted.internet.defer import DeferredList
 from twisted.logger import Logger
 
-from datetime import datetime, timedelta
-from dateutil.tz import gettz, tzlocal
-from astral import Location, Astral
+import pytz
+from astral import Astral
 
 from ledslie.config import Config
 from ledslie.content.generic import GenericContent, CreateContent
-from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_3LINES
-from ledslie.messages import TextTripleLinesLayout
-
-import pytz
+from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
+from ledslie.messages import TextSingleLineLayout
 
 
 class AstralContent(GenericContent):
@@ -41,10 +40,10 @@ class AstralContent(GenericContent):
 
 
     def onBrokerConnected(self):
-        self.publish_task = task.LoopingCall(self.publishAstral)
+        self.publish_task = task.LoopingCall(self.publish_astral)
         self.publish_task.start(60, now=True)
 
-    def publishAstral(self):
+    def publish_astral(self, now=None):
         """I am called every minute."""
 
         def _logFailure(failure):
@@ -54,14 +53,32 @@ class AstralContent(GenericContent):
         def _logAll(*args):
             self.log.debug("all publishing complete args={args!r}", args=args)
 
-        # msg = TextTripleLinesLayout()
-        # msg.duration = self.config['MIDNIGHT_DISPLAY_DURATION']
-        # msg.program = 'midnight'
-        # msg.lines = ['Midnight in', city, ""]
-        # msg.valid_time = self.config["MIDNIGHT_SHOW_VALIDITY"]
-        d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
-        d.addCallbacks(_logAll, _logFailure)
-        return d
+        deferreds = []
+
+        now = self._now(now)
+
+        moon_msg = self.moon_message(now)
+        if moon_msg:
+            msg = TextSingleLineLayout()
+            msg.text = moon_msg
+            msg.program = 'moon'
+            msg.valid_time = 60
+            deferreds.append(self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg))
+
+        solar_msg = self.sun_message(now)
+        if solar_msg:
+            msg = TextSingleLineLayout()
+            msg.text = solar_msg
+            msg.program = 'solar'
+            msg.valid_time = 60
+            deferreds.append(self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg))
+
+        if deferreds:
+            dl = DeferredList(deferreds)
+            dl.addCallbacks(_logAll, _logFailure)
+            return dl
+        else:
+            return None
 
     def _now(self, dt=None):
         dt = datetime.now() if dt is None else dt
