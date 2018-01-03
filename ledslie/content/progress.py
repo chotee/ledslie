@@ -93,7 +93,7 @@ class Progress(GenericContent):
         seconds_in_year = (datetime(now.year + 1, 1, 1, 0, 0, 0) - datetime(now.year, 1, 1, 0, 0, 0)).total_seconds()
         fraction = seconds_since_newyear / seconds_in_year
         year_day = now.timetuple()[7]
-        time_string = "Day {}".format(year_day, now.year)
+        time_string = "{} of {}".format(year_day, now.year)
         line_string = "{:12s}{:6.1%}".format(time_string, fraction)
         return line_string, fraction
 
