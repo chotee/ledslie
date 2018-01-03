@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #     Ledslie, a community information display
-#     Copyright (C) 2017  Chotee@openended.eu
+#     Copyright (C) 2017-18  Chotee@openended.eu
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as published

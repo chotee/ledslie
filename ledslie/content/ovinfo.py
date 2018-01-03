@@ -1,5 +1,5 @@
 # Ledslie, a community information display
-# Copyright (C) 2017  Chotee@openended.eu
+# Copyright (C) 2017-18  Chotee@openended.eu
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -19,7 +19,7 @@ import os
 from datetime import datetime
 from dateutil.parser import parser as date_parser
 from jsonpath_rw.parser import JsonPathParser
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import Deferred
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
@@ -45,7 +45,7 @@ DestinationCode_to_name = {
     'CS': 'CS',
     'NCS': 'CS',
     'SLL': 'Ly',
-    'AMS': 'AM',
+    'AMS': 'Am',
     'M09501429': 'AP',
     'M19501429': 'AP',
     'M19505436': 'Ly',

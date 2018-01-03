@@ -15,3 +15,4 @@ bs4
 python-dateutil
 pytz
 jsonpath-rw
+astral

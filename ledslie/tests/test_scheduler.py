@@ -27,10 +27,11 @@ class TestCatalog(object):
 
         return catalog
 
-    def _create_and_add_sequence(self, catalog, program_id, sequence_content):
+    def _create_and_add_sequence(self, catalog, program_id, sequence_content, valid_time=None):
         seq = FrameSequence()
         seq.program = program_id
         seq.frames = sequence_content
+        seq.valid_time = valid_time
         catalog.add_program(program_id, seq)
 
     def test_get_frames(self):
@@ -77,6 +78,23 @@ class TestCatalog(object):
         assert "Bar2" == catalog.next_frame()
         catalog.now = lambda: 30+Config()["PROGRAM_RETIREMENT_AGE"]
         assert "Bar2" == catalog.next_frame()  # Still exists, because "Second" was updated.
+
+    def test_valid_for(self):
+        catalog = Catalog()
+        catalog.now = lambda: 10
+        self._create_and_add_sequence(catalog, "long", ['Long'])
+        catalog.now = lambda: 15
+        self._create_and_add_sequence(catalog, "short", ['Short'], valid_time=30)
+        assert "Long" == catalog.next_frame()
+        assert "Short" == catalog.next_frame()
+        catalog.now = lambda: 40
+        assert "Long" == catalog.next_frame()
+        assert "Short" == catalog.next_frame()
+        catalog.now = lambda: 46 # Now the short program should be retired.
+        assert "Long" == catalog.next_frame()
+        assert "Short" == catalog.next_frame()
+        assert "Long" == catalog.next_frame()
+        assert "Long" == catalog.next_frame()
 
 
 class TestScheduler(object):

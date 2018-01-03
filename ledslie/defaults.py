@@ -21,7 +21,8 @@ SERIAL_PORT = '/dev/ttyACM0'  # set to "fake" to run without serial port.
 DISPLAY_WIDTH = 144
 DISPLAY_HEIGHT = 24
 DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
-DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
+DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds for the whole screen
+DISPLAY_LINE_DURATION = 2500  # Delay in miliseconds for each line.
 
 TYPESETTER_1LINE_DEFAULT_FONT_SIZE = 20
 TYPESETTER_ANIMATE_VERTICAL_SCROLL_DELAY = 30  # ms to wait between each scrolling frame.
@@ -30,7 +31,12 @@ PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 
 ALERT_RETIREMENT_AGE   = 5*60   # Age in seconds before a alert is removed
 ALERT_INITIAL_REPEAT   = 5      # Number of times an alert is repeated before it is seen as a normal program.
 
-RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=52.34557&lon=4.82647"
+PROGRESS_DISPLAY_DURATION = 4*1000  # Miliseconds that the progress message is shown.
+
+LOCATION_LAT = 52.34557
+LOCATION_LON =  4.82647
+
+RAIN_DATA_SOURCE = "https://br-gpsgadget-new.azurewebsites.net/data/raintext/?lat=%s&lon=%s" % (LOCATION_LAT, LOCATION_LON)
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates
 RAIN_DISPLAY_DURATION = 3*1000  # Mili-Seconds that the rain message is shown.
 
@@ -39,7 +45,7 @@ INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
 
 EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
 EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
-EVENTS_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
+EVENTS_LINE_DURATION = 2500  # Mili-seconds that each information line is shown.
 
 MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.

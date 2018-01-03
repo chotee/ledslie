@@ -1,5 +1,5 @@
 # Ledslie, a community information display
-# Copyright (C) 2017  Chotee@openended.eu
+# Copyright (C) 2017-18  Chotee@openended.eu
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -95,7 +95,7 @@ class EventsContent(GenericContent):
             self.log.debug("all publishing complete args={args!r}", args=args)
         msg = TextTripleLinesLayout()
         msg.lines = event_lines
-        msg.duration = self.config["EVENTS_DISPLAY_DURATION"]
+        msg.line_duration = self.config["EVENTS_LINE_DURATION"]
         msg.program = 'events'
         msg.size = '6x7'
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)

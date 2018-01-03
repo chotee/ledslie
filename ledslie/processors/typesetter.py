@@ -1,23 +1,22 @@
 #!/usr/bin/env python
+
+#     Ledslie, a community information display
+#     Copyright (C) 2017-18  Chotee@openended.eu
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as published
+#     by the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+#
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """
-    Ledslie, a community information display
-    Copyright (C) 2017  Chotee@openended.eu
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published
-    by the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-===========
-
 I take a message with text data and generate a frame representing that data.
 
 TOPIC: ledslie.definitions.LEDSLIE_TOPIC_TYPESETTER:
@@ -55,6 +54,23 @@ FontMapping = {
     '6x7': font6x7,
     '7x6': font6x7,
 }
+
+
+def MarkupLine(image: bytearray, line: str, font: GenericFont):
+    display_width = Config()['DISPLAY_WIDTH']
+    char_display_width = int(display_width / font.width)  # maximum number of characters on a line
+    line_image = bytearray(display_width * 8)  # Bytes of the line.
+    for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
+        try:
+            glyph = font[ord(c)]
+        except KeyError:
+            glyph = font[ord("?")]
+        xpos = j * font.width  # Horizontal Position in the line.
+        for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
+            for x in range(8):  # Look at the bits
+                if testBit(glyph_line, x) != 0:
+                    line_image[xpos + n * display_width + x] = 0xff
+    image.extend(line_image)
 
 
 class Typesetter(GenericProcessor):
@@ -139,34 +155,18 @@ class Typesetter(GenericProcessor):
         # lines = lines[0:3]  # Limit for now.
         image = bytearray()
         for line in lines:  # off all the lines
-            self._markup_line(image, line, font)
+            MarkupLine(image, line, font)
         duration = msg.duration if msg.duration is not None else self.config['DISPLAY_DEFAULT_DELAY']
         if len(lines) <= 3:
             if len(lines) % 3 != 0:  # Append empty lines if not all lines are complete.
                 missing_lines = 3 - len(lines) % 3
                 for c in range(missing_lines):
-                    self._markup_line(image, "", font)
+                    MarkupLine(image, "", font)
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
-            line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+            line_duration = msg.line_duration if msg.line_duration is not None else self.config['DISPLAY_LINE_DURATION']
             seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
-
-    def _markup_line(self, image: bytearray, line: str, font: GenericFont):
-        display_width = self.config['DISPLAY_WIDTH']
-        char_display_width = int(display_width / font.width)  # maximum number of characters on a line
-        line_image = bytearray(display_width * 8)  # Bytes of the line.
-        for j, c in enumerate(line[:char_display_width]):  # Look at each character of a line
-            try:
-                glyph = font[ord(c)]
-            except KeyError:
-                glyph = font[ord("?")]
-            xpos = j * font.width  # Horizontal Position in the line.
-            for n, glyph_line in enumerate(glyph):  # Look at each row of the glyph (is just a byte)
-                for x in range(8):  # Look at the bits
-                    if testBit(glyph_line, x) != 0:
-                        line_image[xpos + n * display_width + x] = 0xff
-        image.extend(line_image)
 
     def _get_font_filepath(self, fontFileName):
         return os.path.realpath(os.path.join(self.config["FONT_DIRECTORY"], fontFileName))
