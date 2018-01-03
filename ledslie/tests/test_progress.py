@@ -37,6 +37,6 @@ class TestProgress(object):
         assert "November 30  98.3%" == progress._create_month_progress(datetime(2018, 11, 30,  12,  0, 0))[0]
 
     def test_create_year_progress(self, progress):
-        assert "Day 1         0.0%" == progress._create_year_progress(datetime(2018,  1,  1,   0,   0,  0))[0]
-        assert "Day 166      45.2%" == progress._create_year_progress(datetime(2018,  6, 15,   0,   0,  0))[0]
-        assert "Day 365     100.0%" == progress._create_year_progress(datetime(2018, 12, 31,  23,  59, 59))[0]
+        assert "1 of 2018     0.0%" == progress._create_year_progress(datetime(2018,  1,  1,   0,   0,  0))[0]
+        assert "166 of 2018  45.2%" == progress._create_year_progress(datetime(2018,  6, 15,   0,   0,  0))[0]
+        assert "365 of 2018 100.0%" == progress._create_year_progress(datetime(2018, 12, 31,  23,  59, 59))[0]
