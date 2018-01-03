@@ -21,7 +21,8 @@ SERIAL_PORT = '/dev/ttyACM0'  # set to "fake" to run without serial port.
 DISPLAY_WIDTH = 144
 DISPLAY_HEIGHT = 24
 DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
-DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds
+DISPLAY_DEFAULT_DELAY = 5000  # Delay in miliseconds for the whole screen
+DISPLAY_LINE_DURATION = 2500  # Delay in miliseconds for each line.
 
 TYPESETTER_1LINE_DEFAULT_FONT_SIZE = 20
 TYPESETTER_ANIMATE_VERTICAL_SCROLL_DELAY = 30  # ms to wait between each scrolling frame.
@@ -44,7 +45,7 @@ INFO_DISPLAY_DURATION = 4*1000  # Mili-Seconds that the rain message is shown.
 
 EVENTS_DATA_SOURCE = 'https://wiki.techinc.nl/index.php/Events'
 EVENTS_UPDATE_FREQ = 5*60  # Seconds between updates.
-EVENTS_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
+EVENTS_LINE_DURATION = 2500  # Mili-seconds that each information line is shown.
 
 MIDNIGHT_DISPLAY_DURATION = 5*1000  # Mili-seconds that information is shown.
 MIDNIGHT_SHOW_VALIDITY    = 5*60    # Seconds the program is considered to be shown.

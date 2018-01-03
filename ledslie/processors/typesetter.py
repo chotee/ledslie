@@ -164,7 +164,7 @@ class Typesetter(GenericProcessor):
                     MarkupLine(image, "", font)
             seq.add_frame(Frame(bytes(image), duration=duration))
         else:
-            line_duration = msg.line_duration if msg.line_duration is not None else duration / len(lines)
+            line_duration = msg.line_duration if msg.line_duration is not None else self.config['DISPLAY_LINE_DURATION']
             seq.extend(AnimateVerticalScroll(image, line_duration))
         return seq
 
