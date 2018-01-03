@@ -45,7 +45,7 @@ DestinationCode_to_name = {
     'CS': 'CS',
     'NCS': 'CS',
     'SLL': 'Ly',
-    'AMS': 'AM',
+    'AMS': 'Am',
     'M09501429': 'AP',
     'M19501429': 'AP',
     'M19505436': 'Ly',

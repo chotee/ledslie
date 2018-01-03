@@ -71,7 +71,7 @@ class TestOVInfo(object):
         ovinfo.lines.add_pass("62", "SLL", 1, datetime.now() + timedelta(minutes=18))
         assert ["  2CS 10m 25m", " 62Ly 18m"] == ovinfo.create_ov_display()
         ovinfo.lines.add_pass("62", "AMS", 1, datetime.now() + timedelta(minutes=23))
-        assert ["  2CS 10m 25m", " 62AM 23m", " 62Ly 18m"] == ovinfo.create_ov_display()
+        assert ["  2CS 10m 25m", " 62Am 23m", " 62Ly 18m"] == ovinfo.create_ov_display()
 
 
     def test_time_formatter(self, ovinfo: OVInfoContent):
