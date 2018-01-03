@@ -37,7 +37,7 @@ class AstralContent(GenericContent):
         self.astral = Astral()
         self.astral.solar_depression = 'civil'
         self.city = self.astral['Amsterdam']
-
+        self.publish_task = None
 
     def onBrokerConnected(self):
         self.publish_task = task.LoopingCall(self.publish_astral)
