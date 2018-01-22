@@ -69,7 +69,7 @@ def setLogLevel(namespace=None, levelStr='info'):
 
 def CreateService(ServiceCls):
     startLogging()
-    setLogLevel(namespace='mqtt', levelStr='debug')
+    setLogLevel(namespace='mqtt', levelStr='info')
     setLogLevel(namespace='__main__', levelStr='debug')
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER | MQTTFactory.SUBSCRIBER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
@@ -163,5 +163,5 @@ class GenericProcessor(ClientService):
         get notfied of disconnections
         and get a deferred for a new protocol object (next retry)
         '''
-        log.debug("<Connection was lost !> <reason={r}>", r=reason)
+        log.info("<Connection was lost !> <reason={r}>", r=reason)
         self.whenConnected().addCallback(self.connectToBroker)
