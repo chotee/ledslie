@@ -14,8 +14,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PIL import Image, ImageSequence
+import logging
 import json
+
+from PIL import Image, ImageSequence
 
 from werkzeug.exceptions import UnsupportedMediaType
 from flask import Flask, render_template, request, json, Response
@@ -80,7 +82,7 @@ def text1():
 @app.route('/text3', methods=['POST'])
 def text3():
     lines = request.form['l1'], request.form['l2'], request.form['l3']
-    size = request.form['size']
+    size = request.form['font']
     duration = int(request.form['duration'])
     program = request.form['program']
     set_data = {
@@ -134,6 +136,7 @@ def make_app():
 
 def main():
     site_app = make_app()
+    app.logger.setLevel(logging.DEBUG)
     site_app.run()
 
 

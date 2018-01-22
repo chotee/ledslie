@@ -23,6 +23,8 @@
 # Value 0 is off, 255 is full brightness. Sending more or less then config.get("DISPLAY_SIZE") pixels will make the
 # serializer ignore the message.
 
+import logging
+
 from zlib import crc32
 import serial
 
@@ -35,15 +37,18 @@ config = Config(envvar_silent=False)
 
 serial_port = None
 
+logging.basicConfig()
+log = logging.getLogger(__name__)
+
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    log.info("Connected with result code "+str(rc))
     client.subscribe(LEDSLIE_TOPIC_SERIALIZER)
 
 
 class FakeSerial(object):
     def write(self, data):
-        print("FAKE SERIAL: Would serialize %d bytes of %d now" % (len(data), crc32(data)))
+        log.debug("FAKE SERIAL: Would serialize %d bytes of %d now" % (len(data), crc32(data)))
 
 
 def connect_serial():
@@ -51,12 +56,12 @@ def connect_serial():
     if config.get('SERIAL_PORT') != "fake":
         try:
             serial_port = serial.Serial(config.get('SERIAL_PORT'), baudrate=config.get('SERIAL_BAUDRATE'))
-            print("Serial port SUCCESS: %s at %s" % (config.get('SERIAL_PORT'), config.get('SERIAL_BAUDRATE')))
+            log.info("Serial port SUCCESS: %s at %s" % (config.get('SERIAL_PORT'), config.get('SERIAL_BAUDRATE')))
         except serial.serialutil.SerialException as exc:
-            print("Serial port failure: %s", exc)
+            log.warning("Serial port failure: %s", exc)
             serial_port = FakeSerial()
     else:
-        print("running fake.")
+        log.warning("running fake.")
         serial_port = FakeSerial()
 
 def send_serial(data):

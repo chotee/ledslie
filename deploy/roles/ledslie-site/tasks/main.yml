@@ -53,6 +53,15 @@
     dest: /etc/default/ledslie
   become: yes
 
+- name: Create logging directory
+  file:
+    name: /var/log/ledslie
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0770
+  become: yes
+
 - name: Installing systemd templates
   template:
     src: ledslie-site.service
