@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
-User={{ ansible_user }}
+User=nobody
 ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/content/{{ item }}.py
 #ExecReload=/bin/kill -HUP $MAINPID
 #KillMode=process

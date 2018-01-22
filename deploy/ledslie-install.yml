@@ -4,5 +4,5 @@
     - { role: cron-apt, become: yes }
     - { role: mosquitto, become: yes }
     - role: ledslie-site
-    - role: ledslie-processors
-    - role: ledslie-content
+    - { role: ledslie-processors, become: yes }
+    - { role: ledslie-content, become: yes }

@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
-User={{ ansible_user }}
+User={{ledslie_user}}
 ExecStartPre=+-/bin/stty -F /dev/ttyACM0 raw
 ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/serializer.py
 #ExecReload=/bin/kill -HUP $MAINPID

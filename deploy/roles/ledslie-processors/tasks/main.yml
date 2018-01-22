@@ -1,22 +1,30 @@
+- name: "Setup group {{ledslie_group}}"
+  group:
+    name: "{{ledslie_group}}"
+    system: yes
+
+- name: "Setup user {{ledslie_user}}"
+  user:
+    name: "{{ledslie_user}}"
+    group: "{{ledslie_group}}"
+    groups:
+      - dialout
+    system: yes
+
 - name: Installing systemd processor templates
   template:
     src: "{{ item }}.service"
     dest: "/etc/systemd/system/{{ item }}.service"
-  with_items:
-    - ledslie-scheduler
-    - ledslie-serializer
-    - ledslie-typesetter
-  become: yes
+  with_items: "{{ledslie_processor}}"
+
+- name: Reload systemd config
+  command: systemctl daemon-reload
 
 - name: Start ledslie processer services
   systemd:
     name: "{{ item }}"
     state: restarted
     enabled: yes
-  with_items:
-    - ledslie-scheduler
-    - ledslie-serializer
-    - ledslie-typesetter
-  become: yes
+  with_items: "{{ledslie_processor}}"
   tags:
     - update
