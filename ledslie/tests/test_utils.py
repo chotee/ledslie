@@ -47,3 +47,20 @@ class TestCircularBuffer(object):
             cb.remove('Missing')
             pytest.fail("Should have raised ValueError")
         except ValueError: pass
+
+    def test_update(self):
+        cb = CircularBuffer(['One'])
+        assert 1 == len(cb)
+        two_id = cb.add("Two")
+        assert two_id is not None
+        assert 2 == len(cb)
+        assert "Two" == cb.next()
+        cb.update(two_id, "Twee")
+        assert 2 == len(cb)
+        assert "One" == cb.next()
+        assert "Twee" == cb.next()
+        try:
+            cb.update(666, "something")
+            pytest.fail("Should have raised KeyError")
+        except KeyError:
+            pass

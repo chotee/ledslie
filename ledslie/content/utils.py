@@ -21,8 +21,13 @@ class CircularBuffer(object):
     first will returned again.
     """
     def __init__(self, elements=None):
-        self._elems = [x for x in elements] if elements else []
+        self._elems = []
+        self._table = {}
         self._curr = -1
+        self._id_counter = -1
+        if elements:
+            for element in reversed(elements):
+                self.add(element)
 
     def add(self, element: object):
         """
@@ -31,7 +36,11 @@ class CircularBuffer(object):
         :param element: The object to add to the buffer
         :type element: object
         """
-        self._elems.insert(self._curr+1, element)
+        self._id_counter += 1
+        e_obj = [element]  # Create a list object, so that we can update just the content of the first element.
+        self._table[self._id_counter] = e_obj
+        self._elems.insert(self._curr+1, e_obj)
+        return self._id_counter
 
     def remove(self, value: object):
         """
@@ -39,10 +48,23 @@ class CircularBuffer(object):
         :param value: The value to remove
         :type value: object
         """
-        i = self._elems.index(value)
+        # Remove from the list
+        i = self._elems.index([value])
         if self._curr >= i:
             self._curr -= 1
         self._elems.pop(i)
+        found = None
+
+        # Remove from the Table
+        for k, v in self._table.items():
+            if v == value:
+                found = k
+                break
+        if found:
+            del self._table[k]
+
+    def update(self, elem_id, new_value):
+        self._table[elem_id][0] = new_value
 
     def next(self):
         """
@@ -52,10 +74,10 @@ class CircularBuffer(object):
         """
         self._curr += 1
         try:
-            return self._elems[self._curr]
+            return self._elems[self._curr][0]
         except IndexError:
             self._curr = 0
-            return self._elems[self._curr]
+            return self._elems[self._curr][0]
 
     def __len__(self):
         return len(self._elems)
