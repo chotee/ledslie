@@ -33,6 +33,17 @@ class CircularBuffer(object):
         """
         self._elems.insert(self._curr+1, element)
 
+    def remove(self, value: object):
+        """
+        Remove value from the buffer.
+        :param value: The value to remove
+        :type value: object
+        """
+        i = self._elems.index(value)
+        if self._curr >= i:
+            self._curr -= 1
+        self._elems.pop(i)
+
     def next(self):
         """
         I return a single entry in the buffer.
