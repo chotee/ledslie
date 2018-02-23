@@ -32,6 +32,7 @@ from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.config import Config
+from ledslie.content.utils import CircularBuffer
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_SERIALIZER, ALERT_PRIO_STRING
 from ledslie.messages import FrameSequence
@@ -48,20 +49,20 @@ log = Logger()
 class Catalog(object):
     def __init__(self):
         self.config = Config()
-        self.programs = {}
+        self.programs = CircularBuffer()
         self.active_program = None
         self.program_name_list = []  # list of keys that indicate the sequence of programs.
         self.active_program_name = None
         self.program_retirement = {}
         self.alert_program = None
 
-    def now(self):
+    def now(self) -> float:
         return time.time()
 
-    def has_content(self):
-        return bool(self.programs)
+    def has_content(self) -> bool:
+        return len(self.programs) > 0
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return not self.has_content()
 
     def select_next_program(self):
