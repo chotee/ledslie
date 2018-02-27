@@ -41,7 +41,6 @@ def next_midnight(tz_str=None):
 
 
 def all_next_midnights():
-    now_home = datetime.now(tzlocal())
     midnights = []
     for tzname in pytz.all_timezones:
         tzname_parts = tzname.split('/')
