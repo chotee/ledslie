@@ -2,31 +2,16 @@
   template:
     src: "ledslie-content.service-tmpl"
     dest: "/etc/systemd/system/ledslie-{{ item }}.service"
-  with_items:
-    - progress
-    - coins
-    - events
-    - info
-    - midnight
-    - ovinfo
-    - rain
-    - astralinfo
-  become: yes
+  with_items: "{{ledslie_content}}"
 
-- name: Start ledslie processer services
+- name: Reload systemd config
+  command: systemctl daemon-reload
+
+- name: Start ledslie content services
   systemd:
     name: "ledslie-{{ item }}"
     state: restarted
     enabled: yes
-  with_items:
-    - progress
-    - coins
-    - events
-    - info
-    - midnight
-    - ovinfo
-    - rain
-    - astralinfo
-  become: yes
+  with_items: "{{ledslie_content}}"
   tags:
     - update
