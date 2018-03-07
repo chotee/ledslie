@@ -7,11 +7,11 @@
 - name: Reload systemd config
   command: systemctl daemon-reload
 
-- name: Start ledslie processer services
+- name: Start ledslie content services
   systemd:
     name: "ledslie-{{ item }}"
     state: restarted
     enabled: yes
-  with_items: ledslie_content
+  with_items: "{{ledslie_content}}"
   tags:
     - update

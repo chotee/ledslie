@@ -44,7 +44,9 @@ class RainContent(GenericContent):
         return failure
 
     def createForecast(self):
-        d = treq.get(self.config["RAIN_DATA_SOURCE"])
+        url = self.config["RAIN_DATA_SOURCE"]
+        self.log.debug("Grabbing rain forecast URL '%s'" % url)
+        d = treq.get(url)
         d.addCallbacks(self.grab_http_response, self._logFailure)
         d.addCallbacks(self.parse_forecast_results, self._logFailure)
         d.addCallbacks(self.create_forcast, self._logFailure)
