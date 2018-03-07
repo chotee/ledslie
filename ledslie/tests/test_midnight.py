@@ -23,8 +23,6 @@ class TestMidnightContent:
 
     def test_midnight_message(self, midnightContent):
         assert "GMT-1" == midnightContent.midnight_message(0.0).lines[2]
-        assert "" == midnightContent.midnight_message(-12600).lines[2]
-
 
     def test_publishMidnight(self, midnightContent):
         assert midnightContent.publishMidnight(0.0)
