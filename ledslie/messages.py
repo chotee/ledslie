@@ -61,6 +61,8 @@ class FrameSequence(GenericProgram):
         self.frames = []
         self.prio = None
         self.frame_nr = -1
+        self.program_id = None
+        self._retirement_age = None
 
     def load(self, payload: bytearray):
         seq_images, seq_info = json.loads(payload.decode())
@@ -80,6 +82,7 @@ class FrameSequence(GenericProgram):
             except KeyError:
                 break
             self.frames.append(Frame(image_data, duration=image_duration))
+        self.set_retirement_age()
         return self
 
     def serialize(self):
@@ -118,6 +121,22 @@ class FrameSequence(GenericProgram):
 
     def is_empty(self):
         return len(self) == 0
+
+    @property
+    def retirement_age(self):
+        if self._retirement_age is None:
+            self._retirement_age = self.set_retirement_age()
+        return self._retirement_age
+
+    def set_retirement_age(self) -> None:
+        """
+        I calculate the age at which point this frame should be retired.
+        """
+        default_retirement_age = self._config['PROGRAM_RETIREMENT_AGE']
+        if self.is_alert():
+            self.alert_count = self._config['ALERT_INITIAL_REPEAT']
+            self.valid_time = self._config['ALERT_RETIREMENT_AGE']
+        return min(self.valid_time, default_retirement_age) if self.valid_time else default_retirement_age
 
     def __len__(self):
         return len(self.frames)

@@ -36,15 +36,16 @@ class TestCatalog(object):
 
     def test_get_frames(self):
         catalog = self.test_init()
-        assert "Foo" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
-        assert "Quux" == catalog.next_frame()
-        assert "Foo" == catalog.next_frame()
+        iter = catalog.frames_iter()
+        assert "Bar" == next(iter)
+        assert "Quux" == next(iter)
+        assert "Foo" == next(iter)
+        assert "Bar" == next(iter)
 
     def test_empty_catalog(self):
         catalog = Catalog()
         try:
-            catalog.next_frame()
+            next(catalog.frames_iter())
         except IndexError:
             pass
         else:
@@ -63,38 +64,40 @@ class TestCatalog(object):
         catalog = Catalog()
         catalog.now = lambda: 10
         self._create_and_add_sequence(catalog, "First", ["Foo"])
-        assert "Foo" == catalog.next_frame()  # Only foo is shown
-        assert "Foo" == catalog.next_frame()
+        f_iter = catalog.frames_iter()
+        assert "Foo" == next(f_iter)  # Only foo is shown
+        assert "Foo" == next(f_iter)
         catalog.now = lambda: 20  # Time passes
         self._create_and_add_sequence(catalog, "Second", ["Bar"])
-        assert "Bar" == catalog.next_frame()
-        assert "Foo" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
+        assert "Bar" == next(f_iter)
+        assert "Foo" == next(f_iter)
+        assert "Bar" == next(f_iter)
         catalog.now = lambda: 20+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Foo" == catalog.next_frame()  # Foo now gets retired.
-        assert "Bar" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
+        assert "Foo" == next(f_iter)  # Foo now gets retired.
+        assert "Bar" == next(f_iter)
+        assert "Bar" == next(f_iter)
         self._create_and_add_sequence(catalog, "Second", ["Bar2"])  # "Second" got updated
-        assert "Bar2" == catalog.next_frame()
+        assert "Bar2" == next(f_iter)
         catalog.now = lambda: 30+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Bar2" == catalog.next_frame()  # Still exists, because "Second" was updated.
+        assert "Bar2" == next(f_iter)  # Still exists, because "Second" was updated.
 
     def test_valid_for(self):
         catalog = Catalog()
+        f_iter = catalog.frames_iter()
         catalog.now = lambda: 10
         self._create_and_add_sequence(catalog, "long", ['Long'])
         catalog.now = lambda: 15
         self._create_and_add_sequence(catalog, "short", ['Short'], valid_time=30)
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
+        assert "Short" == next(f_iter)
+        assert "Long" == next(f_iter)
         catalog.now = lambda: 40
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
-        catalog.now = lambda: 46 # Now the short program should be retired.
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
-        assert "Long" == catalog.next_frame()
-        assert "Long" == catalog.next_frame()
+        assert "Short" == next(f_iter)
+        assert "Long" == next(f_iter)
+        catalog.now = lambda: 46  # Now the short program should be retired.
+        assert "Short" == next(f_iter)
+        assert "Long" == next(f_iter)
+        assert "Long" == next(f_iter)
+        assert "Long" == next(f_iter)
 
 
 class TestScheduler(object):

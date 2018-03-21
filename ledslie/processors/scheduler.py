@@ -30,12 +30,13 @@ import time
 
 from twisted.internet import reactor
 from twisted.logger import Logger
+from typing import Iterable
 
 from ledslie.config import Config
 from ledslie.content.utils import CircularBuffer
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
     LEDSLIE_TOPIC_SERIALIZER, ALERT_PRIO_STRING
-from ledslie.messages import FrameSequence
+from ledslie.messages import FrameSequence, Frame
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.service import CreateService, GenericProcessor
 
@@ -50,9 +51,7 @@ class Catalog(object):
     def __init__(self):
         self.config = Config()
         self.programs = CircularBuffer()
-        self.active_program = None
-        self.program_name_list = []  # list of keys that indicate the sequence of programs.
-        self.active_program_name = None
+        self.program_name_ids = {}  # Dict with names and Ids.
         self.program_retirement = {}
         self.alert_program = None
 
@@ -65,52 +64,43 @@ class Catalog(object):
     def is_empty(self) -> bool:
         return not self.has_content()
 
-    def select_next_program(self):
-        if self.alert_program and self.alert_program.alert_count > 0:
-            self.alert_program.alert_count -= 1
-            self.active_program = self.alert_program
-            self.active_program_name = ALERT_PRIO_STRING
-        else:
-            next_program_name = self._select_program()
-            self.active_program = self.programs[next_program_name]
-            self.active_program_name = next_program_name
-        if self.now() > self.program_retirement[self.active_program_name]:
-            self.remove_program(self.active_program_name)
+    def frames_iter(self) -> Iterable:
+        """
+        I return the next frame.
 
-    def _select_program(self):
-        try:
-            active_program_idx = self.program_name_list.index(self.active_program_name)
-            next_program_name = self.program_name_list[active_program_idx + 1]
-        except (ValueError, IndexError):
-            next_program_name = self.program_name_list[0]
-        return next_program_name
+        :return: The frame to display
+        :rtype: Frame
+        """
+        while True:
+            current_program = next(self.programs)
+            if self.now() > self.program_retirement[current_program.program_id]:
+                self.programs.remove(current_program)
+            yield from current_program.frames
 
-    def next_frame(self):
-        if self.active_program is None:
-            self.select_next_program()
-        try:
-            return self.active_program.next_frame()
-        except IndexError:
-            self.select_next_program()
-            return self.next_frame()
 
-    def add_program(self, program_id: str, seq: FrameSequence):
+    def add_program(self, program_name: str, seq: FrameSequence):
+        """
+        I add a program to the catalog.
+        :param program_id: The id of the program
+        :type program_id: str
+        :param seq: The sequence to add to the catalog
+        :type seq: FrameSequence
+        """
         assert isinstance(seq, FrameSequence), "Program is not a ImageSequence but: %s" % seq
-        if program_id not in self.programs:
-            self.program_name_list.append(program_id)
-        self.programs[program_id] = seq
-        default_retirement_age = self.config['PROGRAM_RETIREMENT_AGE']
-        if seq.is_alert():
-            self.alert_program = seq
-            seq.alert_count = self.config['ALERT_INITIAL_REPEAT']
-            seq.valid_time = self.config['ALERT_RETIREMENT_AGE']
-        retirement_age = min(seq.valid_time, default_retirement_age) if seq.valid_time else default_retirement_age
-        self.program_retirement[program_id] = self.now() + retirement_age
 
-    def remove_program(self, program_id):
-        del self.programs[program_id]
-        del self.program_retirement[program_id]
-        self.program_name_list.remove(program_id)
+        if program_name not in self.program_name_ids:
+            program_id = self.programs.add(seq)
+            self.program_name_ids[program_name] = program_id
+        else:
+            program_id = self.program_name_ids[program_name]
+            self.programs.update(program_id, seq)
+        seq.program_id = program_id
+        self.program_retirement[program_id] = seq.retirement_age + self.now()
+
+    def remove_program(self, program_name: str) -> None:
+        program_id = self.program_name_ids[program_name]
+        del self.program_name_ids[program_name]
+        self.programs.remove_by_id(program_id)
 
 
 class Scheduler(GenericProcessor):
@@ -123,19 +113,20 @@ class Scheduler(GenericProcessor):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
         self.sequencer = None
+        self.frame_iterator = None
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         '''
         Callback Receiving messages from publisher
         '''
         log.debug("onPublish topic={topic}, msg={payload}", payload=payload, topic=topic)
-        program_id = self.get_program_id(topic)
+        program_name = self.get_program_id(topic)
         seq = FrameSequence().load(payload)
         if seq is None:
             return
         if len(seq) == 1:
             seq = AnimateStill(seq[0])
-        self.catalog.add_program(program_id, seq)
+        self.catalog.add_program(program_name, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
 
@@ -147,8 +138,10 @@ class Scheduler(GenericProcessor):
         return program_id
 
     def send_next_frame(self):
+        if self.frame_iterator is None:
+            self.frame_iterator = self.catalog.frames_iter()
         try:
-            frame = self.catalog.next_frame()
+            frame = next(self.frame_iterator)
         except KeyError:
             return
         self.publish_frame(frame)

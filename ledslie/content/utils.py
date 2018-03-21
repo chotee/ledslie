@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from typing import Any
 
 
 class CircularBuffer(object):
@@ -29,12 +30,13 @@ class CircularBuffer(object):
             for element in reversed(elements):
                 self.add(element)
 
-    def add(self, element: object):
+    def add(self, element: Any) -> int:
         """
         I add an element to the buffer. I also make sure that the next call of next() will return the last element
         added.
         :param element: The object to add to the buffer
-        :type element: object
+        :type element: Any
+        :return: An id of the object just added.
         """
         self._id_counter += 1
         e_obj = [element]  # Create a list object, so that we can update just the content of the first element.
@@ -42,9 +44,10 @@ class CircularBuffer(object):
         self._elems.insert(self._curr+1, e_obj)
         return self._id_counter
 
-    def remove(self, value: object):
+    def remove(self, value: Any):
         """
         Remove value from the buffer.
+
         :param value: The value to remove
         :type value: object
         """
@@ -63,10 +66,27 @@ class CircularBuffer(object):
         if found:
             del self._table[k]
 
-    def update(self, elem_id, new_value):
+    def remove_by_id(self, id: int):
+        """
+        Remove the content by the contents id.
+
+        :param id:
+        :type id: int
+        """
+
+    def update(self, elem_id: int, new_value: Any):
         self._table[elem_id][0] = new_value
 
-    def next(self):
+    def __contains__(self, elem_id) -> bool:
+        """
+        I return True if the elem_id is in the buffer.
+        :param elem_id: The id of the element
+        :return: True if found.
+        :rtype: bool
+        """
+        return elem_id in self._table
+
+    def __next__(self):
         """
         I return a single entry in the buffer.
         :return: An entry in the buffer.
@@ -78,6 +98,9 @@ class CircularBuffer(object):
         except IndexError:
             self._curr = 0
             return self._elems[self._curr][0]
+
+    def __iter__(self):
+        return self
 
     def __len__(self):
         return len(self._elems)
