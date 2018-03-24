@@ -110,6 +110,12 @@ class FrameSequence(GenericProgram):
             self.frame_nr = -1
             raise
 
+    def first(self):
+        return self.frames[0]
+
+    def last(self):
+        return self.frames[-1]
+
     def is_alert(self):
         return self.prio == ALERT_PRIO_STRING
 

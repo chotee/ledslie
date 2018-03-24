@@ -8,7 +8,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_S
 from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-from ledslie.processors.scheduler import Catalog
+from ledslie.processors.scheduler import Catalog, IntermezzoWipe
 from ledslie.processors.animate import AnimateStill
 
 
@@ -27,12 +27,12 @@ class TestCatalog(object):
 
         return catalog
 
-    def _create_and_add_sequence(self, catalog, program_id, sequence_content, valid_time=None):
+    def _create_and_add_sequence(self, catalog, program_name, sequence_content, valid_time=None):
         seq = FrameSequence()
-        seq.program = program_id
+        seq.program = program_name
         seq.frames = sequence_content
         seq.valid_time = valid_time
-        catalog.add_program(program_id, seq)
+        catalog.add_program(program_name, seq)
 
     def test_get_frames(self):
         catalog = self.test_init()
@@ -99,6 +99,17 @@ class TestCatalog(object):
         assert "Long" == next(f_iter)
         assert "Long" == next(f_iter)
 
+    def test_intermezzo_wipe(self):
+        catalog = Catalog()
+        catalog.add_intermezzo(IntermezzoWipe)
+        self._create_and_add_sequence(catalog, 'second', [Frame(bytearray(b'\x00'*3456), 10)])
+        self._create_and_add_sequence(catalog, 'first',  [Frame(bytearray(b'\xff'*3456), 10)])
+        f_iter = catalog.frames_iter()
+        res = next(f_iter)
+        assert 0xff == res.raw()[0]
+        res2 = next(f_iter)
+        assert 0x0 == res2.raw()[0]
+
 
 class TestScheduler(object):
 
@@ -154,9 +165,6 @@ class TestScheduler(object):
         assert b'2' * image_size == sched.protocol._published_messages[-1][1]
         #
         sched.send_next_frame()  # End of program!
-        # assert 3 == len(sched.protocol._published_messages)
-        # sched.send_next_frame()  # End of program!  # this should not happen.
-        # assert 3 == len(sched.protocol._published_messages)
 
     def test_sequence_wrong(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')

@@ -47,6 +47,24 @@ from ledslie.processors.service import CreateService, GenericProcessor
 log = Logger()
 
 
+def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
+    config = Config()
+    prv = previous_frame.raw()
+    nxt = next_frame.raw()
+    seq = FrameSequence()
+    height = config['DISPLAY_HEIGHT']
+    width = config['DISPLAY_WIDTH']
+    sep = bytearray([0x00, 0xff, 0x80, 0xff, 0x00])
+    sep_len = len(sep)
+    for step in range(2, width, 2):
+        img_data = bytearray()
+        for row in range(0, height):
+            start = width*row
+            img_data.extend(nxt[start:start+step] + sep + prv[start+step+sep_len:start+width])
+        seq.add_frame(Frame(img_data, 20))
+    return seq
+
+
 class Catalog(object):
     def __init__(self):
         self.config = Config()
@@ -54,6 +72,10 @@ class Catalog(object):
         self.program_name_ids = {}  # Dict with names and Ids.
         self.program_retirement = {}
         self.alert_program = None
+        self.intermezzo_func = None
+
+    def add_intermezzo(self, intermezzo_func):
+        self.intermezzo_func = intermezzo_func
 
     def now(self) -> float:
         return time.time()
@@ -71,11 +93,17 @@ class Catalog(object):
         :return: The frame to display
         :rtype: Frame
         """
+        prev_program = None
         while True:
             current_program = next(self.programs)
+            if prev_program and self.intermezzo_func:
+                intermezzo = self.intermezzo_func(prev_program.last(), current_program.first())
+                if intermezzo:
+                    yield from intermezzo
             if self.now() > self.program_retirement[current_program.program_id]:
                 self.programs.remove(current_program)
             yield from current_program.frames
+            prev_program = current_program
 
 
     def add_program(self, program_name: str, seq: FrameSequence):
