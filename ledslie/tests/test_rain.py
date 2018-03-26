@@ -45,12 +45,12 @@ class TestRain(object):
         ]
         assert "Rain Rain Rain" == rain.create_forcast(data)
 
-
     def test_parse_forecast_results(self, rain):
         assert 24 == len(rain.parse_forecast_results(sample1))
         assert [0, '09:40'] == rain.parse_forecast_results(sample1)[1]
         assert [0, '09:45'] == rain.parse_forecast_results(sample1)[2]
 
+        pytest.raises(RuntimeWarning, rain.parse_forecast_results, b"")
 
     def test_publish_events(self, rain):
         rain.publish_forcast("Cats and dogs")

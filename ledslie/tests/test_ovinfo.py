@@ -98,3 +98,6 @@ class TestOVInfo(object):
 
         after_the_hour = datetime(2017, 12, 15, 14, 5, 0)
         assert '14:05' == ovinfo.time_formatter(after_the_hour, now)
+
+    def test_update_ov_info(self, ovinfo: OVInfoContent):
+        ovinfo.update_ov_info()
