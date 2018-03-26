@@ -49,8 +49,8 @@ log = Logger()
 
 def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
     config = Config()
-    wipe_frame_delay = 10
-    wipe_frame_step_size = 5
+    wipe_frame_delay = config['INTERMEZZO_WIPE_FRAME_DELAY']
+    wipe_frame_step_size = config['INTERMEZZO_WIPE_FRAME_STEP_SIZE']
     prv = previous_frame.raw()
     nxt = next_frame.raw()
     seq = FrameSequence()
