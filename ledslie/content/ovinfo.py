@@ -106,7 +106,7 @@ class OVInfoContent(GenericContent):
         return failure
 
     def update_ov_info(self):
-        d = treq.get(self.urls.next())
+        d = treq.get(next(self.urls))
         d.addCallbacks(self.grab_http_response, self._logFailure)
         d.addCallbacks(self.parse_json_page, self._logFailure)
         d.addCallbacks(self.update_depature_info, self._logFailure)

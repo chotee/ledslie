@@ -8,93 +8,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_S
 from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
 from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
-from ledslie.processors.scheduler import Catalog
 from ledslie.processors.animate import AnimateStill
-
-
-class TestCatalog(object):
-    def test_init(self, catalog=None):
-        catalog = Catalog() if catalog is None else catalog
-        assert catalog.is_empty()
-        assert not catalog.has_content()
-
-        self._create_and_add_sequence(catalog, "First", ["Foo"])
-
-        assert not catalog.is_empty()
-        assert catalog.has_content()
-
-        self._create_and_add_sequence(catalog, "Second", ["Bar", "Quux"])
-
-        return catalog
-
-    def _create_and_add_sequence(self, catalog, program_id, sequence_content, valid_time=None):
-        seq = FrameSequence()
-        seq.program = program_id
-        seq.frames = sequence_content
-        seq.valid_time = valid_time
-        catalog.add_program(program_id, seq)
-
-    def test_get_frames(self):
-        catalog = self.test_init()
-        assert "Foo" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
-        assert "Quux" == catalog.next_frame()
-        assert "Foo" == catalog.next_frame()
-
-    def test_empty_catalog(self):
-        catalog = Catalog()
-        try:
-            catalog.next_frame()
-        except IndexError:
-            pass
-        else:
-            assert "Should not get here!"
-
-    def test_remove_program(self):
-        catalog = self.test_init()
-        assert catalog.has_content()
-        catalog.remove_program("First")
-        catalog.remove_program("Second")
-        try: catalog.remove_program("Missing")
-        except KeyError: pass
-        else: assert False
-
-    def test_program_retire(self):
-        catalog = Catalog()
-        catalog.now = lambda: 10
-        self._create_and_add_sequence(catalog, "First", ["Foo"])
-        assert "Foo" == catalog.next_frame()  # Only foo is shown
-        assert "Foo" == catalog.next_frame()
-        catalog.now = lambda: 20  # Time passes
-        self._create_and_add_sequence(catalog, "Second", ["Bar"])
-        assert "Bar" == catalog.next_frame()
-        assert "Foo" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
-        catalog.now = lambda: 20+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Foo" == catalog.next_frame()  # Foo now gets retired.
-        assert "Bar" == catalog.next_frame()
-        assert "Bar" == catalog.next_frame()
-        self._create_and_add_sequence(catalog, "Second", ["Bar2"])  # "Second" got updated
-        assert "Bar2" == catalog.next_frame()
-        catalog.now = lambda: 30+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Bar2" == catalog.next_frame()  # Still exists, because "Second" was updated.
-
-    def test_valid_for(self):
-        catalog = Catalog()
-        catalog.now = lambda: 10
-        self._create_and_add_sequence(catalog, "long", ['Long'])
-        catalog.now = lambda: 15
-        self._create_and_add_sequence(catalog, "short", ['Short'], valid_time=30)
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
-        catalog.now = lambda: 40
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
-        catalog.now = lambda: 46 # Now the short program should be retired.
-        assert "Long" == catalog.next_frame()
-        assert "Short" == catalog.next_frame()
-        assert "Long" == catalog.next_frame()
-        assert "Long" == catalog.next_frame()
 
 
 class TestScheduler(object):
@@ -151,9 +65,6 @@ class TestScheduler(object):
         assert b'2' * image_size == sched.protocol._published_messages[-1][1]
         #
         sched.send_next_frame()  # End of program!
-        # assert 3 == len(sched.protocol._published_messages)
-        # sched.send_next_frame()  # End of program!  # this should not happen.
-        # assert 3 == len(sched.protocol._published_messages)
 
     def test_sequence_wrong(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')

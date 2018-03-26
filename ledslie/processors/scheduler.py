@@ -26,16 +26,16 @@
 #
 # An image is simply a sequence of one frame
 
-import time
-
 from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
-    LEDSLIE_TOPIC_SERIALIZER, ALERT_PRIO_STRING
+    LEDSLIE_TOPIC_SERIALIZER
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
+from ledslie.processors.catalog import Catalog
+from ledslie.processors.intermezzos import IntermezzoWipe
 from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
@@ -43,73 +43,6 @@ from ledslie.processors.service import CreateService, GenericProcessor
 # ----------------
 
 log = Logger()
-
-
-class Catalog(object):
-    def __init__(self):
-        self.config = Config()
-        self.programs = {}
-        self.active_program = None
-        self.program_name_list = []  # list of keys that indicate the sequence of programs.
-        self.active_program_name = None
-        self.program_retirement = {}
-        self.alert_program = None
-
-    def now(self):
-        return time.time()
-
-    def has_content(self):
-        return bool(self.programs)
-
-    def is_empty(self):
-        return not self.has_content()
-
-    def select_next_program(self):
-        if self.alert_program and self.alert_program.alert_count > 0:
-            self.alert_program.alert_count -= 1
-            self.active_program = self.alert_program
-            self.active_program_name = ALERT_PRIO_STRING
-        else:
-            next_program_name = self._select_program()
-            self.active_program = self.programs[next_program_name]
-            self.active_program_name = next_program_name
-        if self.now() > self.program_retirement[self.active_program_name]:
-            self.remove_program(self.active_program_name)
-
-    def _select_program(self):
-        try:
-            active_program_idx = self.program_name_list.index(self.active_program_name)
-            next_program_name = self.program_name_list[active_program_idx + 1]
-        except (ValueError, IndexError):
-            next_program_name = self.program_name_list[0]
-        return next_program_name
-
-    def next_frame(self):
-        if self.active_program is None:
-            self.select_next_program()
-        try:
-            return self.active_program.next_frame()
-        except IndexError:
-            self.select_next_program()
-            return self.next_frame()
-
-    def add_program(self, program_id: str, seq: FrameSequence):
-        assert isinstance(seq, FrameSequence), "Program is not a ImageSequence but: %s" % seq
-        if program_id not in self.programs:
-            self.program_name_list.append(program_id)
-        self.programs[program_id] = seq
-        default_retirement_age = self.config['PROGRAM_RETIREMENT_AGE']
-        if seq.is_alert():
-            self.alert_program = seq
-            seq.alert_count = self.config['ALERT_INITIAL_REPEAT']
-            seq.valid_time = self.config['ALERT_RETIREMENT_AGE']
-        retirement_age = min(seq.valid_time, default_retirement_age) if seq.valid_time else default_retirement_age
-        self.program_retirement[program_id] = self.now() + retirement_age
-
-    def remove_program(self, program_id):
-        del self.programs[program_id]
-        del self.program_retirement[program_id]
-        self.program_name_list.remove(program_id)
 
 
 class Scheduler(GenericProcessor):
@@ -121,20 +54,22 @@ class Scheduler(GenericProcessor):
     def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
+        self.catalog.add_intermezzo(IntermezzoWipe)
         self.sequencer = None
+        self.frame_iterator = None
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         '''
         Callback Receiving messages from publisher
         '''
         log.debug("onPublish topic={topic}, msg={payload}", payload=payload, topic=topic)
-        program_id = self.get_program_id(topic)
+        program_name = self.get_program_id(topic)
         seq = FrameSequence().load(payload)
         if seq is None:
             return
         if len(seq) == 1:
             seq = AnimateStill(seq[0])
-        self.catalog.add_program(program_id, seq)
+        self.catalog.add_program(program_name, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
 
@@ -146,8 +81,10 @@ class Scheduler(GenericProcessor):
         return program_id
 
     def send_next_frame(self):
+        if self.frame_iterator is None:
+            self.frame_iterator = self.catalog.frames_iter()
         try:
-            frame = self.catalog.next_frame()
+            frame = next(self.frame_iterator)
         except KeyError:
             return
         self.publish_frame(frame)

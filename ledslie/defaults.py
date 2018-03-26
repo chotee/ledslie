@@ -31,7 +31,7 @@ PROGRAM_RETIREMENT_AGE = 30*60  # Age in seconds before the program is removed. 
 ALERT_RETIREMENT_AGE   = 5*60   # Age in seconds before a alert is removed
 ALERT_INITIAL_REPEAT   = 5      # Number of times an alert is repeated before it is seen as a normal program.
 
-PROGRESS_DISPLAY_DURATION = 4*1000  # Miliseconds that the progress message is shown.
+PROGRESS_DISPLAY_DURATION = 5*1000  # Miliseconds that the progress message is shown.
 
 LOCATION_LAT = 52.34557
 LOCATION_LON =  4.82647
@@ -65,3 +65,6 @@ OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in 
                                    # All the URLs are hit in this time.
 OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
 OVINFO_LINE_DELAY         = 2500  # Miliseconds per displayed line.
+
+INTERMEZZO_WIPE_FRAME_DELAY = 12  # Delay in miliseconds between wipe frames
+INTERMEZZO_WIPE_FRAME_STEP_SIZE = 4  # number of pixels to move with each wipe frame.

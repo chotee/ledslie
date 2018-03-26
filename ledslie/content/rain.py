@@ -20,6 +20,7 @@ from twisted.internet import _sslverify
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
+from twisted.python.failure import Failure
 from twisted.web.client import readBody
 import treq
 
@@ -77,6 +78,8 @@ class RainContent(GenericContent):
                 continue
             rain_value, hour = raw.split("|")
             raw_arr.append([int(rain_value, 10), hour])
+        if len(raw_arr) == 0:
+            raise RuntimeWarning("API results where not in the expected format. They were: {}".format(raw_str))
         return raw_arr
 
     def publish_forcast(self, forcast_string: str):
