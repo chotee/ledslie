@@ -49,6 +49,8 @@ log = Logger()
 
 def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
     config = Config()
+    wipe_frame_delay = 10
+    wipe_frame_step_size = 5
     prv = previous_frame.raw()
     nxt = next_frame.raw()
     seq = FrameSequence()
@@ -56,12 +58,12 @@ def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
     width = config['DISPLAY_WIDTH']
     sep = bytearray([0x00, 0xff, 0x80, 0xff, 0x00])
     sep_len = len(sep)
-    for step in range(2, width, 2):
+    for step in range(wipe_frame_step_size, width, wipe_frame_step_size):
         img_data = bytearray()
         for row in range(0, height):
             start = width*row
             img_data.extend(nxt[start:start+step] + sep + prv[start+step+sep_len:start+width])
-        seq.add_frame(Frame(img_data, 20))
+        seq.add_frame(Frame(img_data, wipe_frame_delay))
     return seq
 
 
@@ -140,6 +142,7 @@ class Scheduler(GenericProcessor):
     def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
+        self.catalog.add_intermezzo(IntermezzoWipe)
         self.sequencer = None
         self.frame_iterator = None
 
