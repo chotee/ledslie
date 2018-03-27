@@ -151,6 +151,12 @@ class FrameSequence(GenericProgram):
         return self.frames[nr]
 
 
+class EmptyProgram(GenericProgram):
+    def __init__(self, program_name):
+        super().__init__()
+        self.program = program_name
+
+
 class GenericTextLayout(GenericProgram):
     def __init__(self):
         super().__init__()

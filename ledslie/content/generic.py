@@ -30,7 +30,7 @@ from twisted.logger import Logger, LogLevel, globalLogBeginner, textFileLogObser
 # Global variables
 # ----------------
 from ledslie.config import Config
-from ledslie.definitions import LEDSLIE_TOPIC_STATS_BASE
+from ledslie.definitions import LEDSLIE_TOPIC_STATS_BASE, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 
 logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
 
@@ -77,6 +77,7 @@ def CreateContent(contentCls):
     serv = contentCls(myEndpoint, factory)
     serv.startService(contentCls.__name__)
     return serv
+
 
 class GenericContent(ClientService):
     def __init__(self, endpoint, factory, reactor=None):
@@ -128,4 +129,15 @@ class GenericContent(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if hasattr(message, 'serialize'):
             message = message.serialize()
+        self.log.info("To '{topic}', Published: '{data}'", topic=topic, data=message)
         return self.protocol.publish(topic, message, qos, retain)
+
+    def remove_display(self, program_name):
+        """
+        Remove the program from the display.
+        :param program_name: The name of the program to remove
+        :type program_name: str
+        :return: The deferred that's called when the command has been send.
+        :rtype: deferred
+        """
+        return self.publish(LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + program_name, "")

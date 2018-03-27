@@ -70,9 +70,10 @@ class CircularBuffer(object):
         """
         Remove the content by the contents id.
 
-        :param id:
+        :param id: The id of the object to remove.
         :type id: int
         """
+        self.remove(self._table[id][0])
 
     def update(self, elem_id: int, new_value: Any):
         self._table[elem_id][0] = new_value
