@@ -33,6 +33,17 @@ class TestScheduler(object):
         sched.onPublish(topic, payload, qos=0, dup=False, retain=False, msgId=0)
         assert not sched.catalog.is_empty()
 
+    def test_remove_program(self, sched):
+        topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + "test"
+        self.test_on_message(sched)
+        assert not sched.catalog.is_empty()
+        sched.onPublish(topic, b"", qos=0, dup=False, retain=False, msgId=0)
+        assert sched.catalog.is_empty()
+
+        # Removing a non-existent program should not be a problem.
+        sched.onPublish(topic, b"", qos=0, dup=False, retain=False, msgId=0)
+        assert sched.catalog.is_empty()
+
     def _test_sequence(self, sched):
         sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')

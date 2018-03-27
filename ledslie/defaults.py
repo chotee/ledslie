@@ -66,7 +66,7 @@ OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in 
 OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
 OVINFO_LINE_DELAY         = 2500  # Miliseconds per displayed line.
 
-MPD_PLAYING_UPDATE = 5
+MPD_PLAYING_UPDATE = 10
 MPD_HOST = 'mpd.ti'
 MPD_PORT = 6600
 

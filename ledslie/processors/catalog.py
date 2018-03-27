@@ -68,5 +68,15 @@ class Catalog(object):
 
     def remove_program(self, program_name: str) -> None:
         program_id = self.program_name_ids[program_name]
-        del self.program_name_ids[program_name]
         self.programs.remove_by_id(program_id)
+        del self.program_name_ids[program_name]
+
+    def __contains__(self, program_name: str) -> bool:
+        """
+        Return true if the catalog contains a program of program_name
+        :param program_name: The name of the program
+        :type program_name: str
+        :return: True if the program was found. False otherwise.
+        :rtype: bool
+        """
+        return program_name in self.program_name_ids

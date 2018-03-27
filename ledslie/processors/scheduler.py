@@ -64,6 +64,10 @@ class Scheduler(GenericProcessor):
         '''
         log.debug("onPublish topic={topic}, msg={payload}", payload=payload, topic=topic)
         program_name = self.get_program_id(topic)
+        if not payload:  # remove programs when the payload is empty.
+            if program_name in self.catalog:
+                self.catalog.remove_program(program_name)
+            return
         seq = FrameSequence().load(payload)
         if seq is None:
             return
