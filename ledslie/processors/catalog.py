@@ -43,8 +43,13 @@ class Catalog(object):
                     yield from intermezzo
             if self.now() > self.program_retirement[current_program.program_id]:
                 self.programs.remove(current_program)
-            yield from current_program.frames
+            yield from self.mark_program_progress(current_program.frames)
             prev_program = current_program
+
+    def mark_program_progress(self, frames):
+        width = self.config['DISPLAY_WIDTH']
+        for frame in frames:
+            yield frame
 
 
     def add_program(self, program_name: str, seq: FrameSequence):
