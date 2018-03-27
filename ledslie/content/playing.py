@@ -31,21 +31,31 @@ class MpdPlaying(GenericContent):
         super().__init__(endpoint, factory)
         self.update_task = None
         self.mpd = None
+        self.program_name = 'playing'
+        self.playing_state = False
 
     def onMpdConnected(self, mpdProtocol):
         self.log.info("MPD connected.")
         self.mpd = mpdProtocol
 
     def onBrokerConnected(self):
-        self.update_task = task.LoopingCall(self.get_song_info)
+        self.update_task = task.LoopingCall(self.get_playing_state)
         self.update_task.start(float(self.config['MPD_PLAYING_UPDATE']), now=True)
 
-    def get_song_info(self):
+    def get_playing_state(self):
         if self.mpd is None:
             self.log.info("MPD not yet ready")
             return
-        self.log.info("MPD ready, self.mpd is {}".format(self.mpd))
-        self.mpd.currentsong().addCallback(self.display_song_info)
+        self.mpd.status().addCallback(self.get_song_info)
+
+    def get_song_info(self, state_info):
+        if state_info['state'] == 'play':
+            self.mpd.currentsong().addCallback(self.display_song_info)
+            self.playing_state = True
+        else:
+            if self.playing_state:
+                self.remove_display(self.program_name)
+            self.playing_state = False
 
     def display_song_info(self, data):
         def _logAll(*args):
@@ -59,9 +69,9 @@ class MpdPlaying(GenericContent):
         msg = TextTripleLinesLayout()
         msg.lines = playing_info
         msg.duration = self.config['INFO_DISPLAY_DURATION']
-        msg.program = 'playing'
+        msg.program = self.program_name
         msg.size = '6x7'
-        # self.log.debug(repr(playing_info))
+        self.log.debug(repr(playing_info))
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
