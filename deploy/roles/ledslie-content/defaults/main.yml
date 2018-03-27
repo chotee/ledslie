@@ -1,9 +1,10 @@
 ledslie_content:
+    - info
     - progress
+    - midnight
+    - astralinfo
     - coins
     - events
-    - info
-    - midnight
     - ovinfo
     - rain
-    - astralinfo
+    - playing

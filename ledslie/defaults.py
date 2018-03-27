@@ -66,5 +66,9 @@ OVINFO_UPDATE_FREQ        = 15*60  # Seconds between pulling new information in 
 OVINFO_PUBLISH_FREQ       = 1*60   # Seconds between updating the display program.
 OVINFO_LINE_DELAY         = 2500  # Miliseconds per displayed line.
 
+MPD_PLAYING_UPDATE = 10
+MPD_HOST = 'mpd.ti'
+MPD_PORT = 6600
+
 INTERMEZZO_WIPE_FRAME_DELAY = 12  # Delay in miliseconds between wipe frames
 INTERMEZZO_WIPE_FRAME_STEP_SIZE = 4  # number of pixels to move with each wipe frame.
