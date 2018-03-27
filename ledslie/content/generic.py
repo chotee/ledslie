@@ -68,9 +68,13 @@ def setLogLevel(namespace=None, levelStr='info'):
 
 
 def CreateContent(contentCls):
+    config = Config()
     startLogging()
-    setLogLevel(namespace='mqtt', levelStr='debug')
-    setLogLevel(namespace=contentCls.__name__, levelStr='debug')
+    log_level = 'info'
+    if config['DEBUG']:
+        log_level = 'debug'
+    setLogLevel(namespace='mqtt', levelStr=log_level)
+    setLogLevel(namespace=contentCls.__name__, levelStr=log_level)
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
@@ -129,7 +133,7 @@ class GenericContent(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if hasattr(message, 'serialize'):
             message = message.serialize()
-        self.log.info("To '{topic}', Published: '{data}'", topic=topic, data=message)
+        self.log.debug("To '{topic}', Published: '{data}'", topic=topic, data=message)
         return self.protocol.publish(topic, message, qos, retain)
 
     def remove_display(self, program_name):
