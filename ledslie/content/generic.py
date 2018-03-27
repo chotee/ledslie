@@ -78,6 +78,7 @@ def CreateContent(contentCls):
     serv.startService(contentCls.__name__)
     return serv
 
+
 class GenericContent(ClientService):
     def __init__(self, endpoint, factory, reactor=None):
         super().__init__(endpoint, factory)
