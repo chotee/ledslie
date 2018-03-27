@@ -68,9 +68,13 @@ def setLogLevel(namespace=None, levelStr='info'):
 
 
 def CreateContent(contentCls):
+    config = Config()
     startLogging()
-    setLogLevel(namespace='mqtt', levelStr='debug')
-    setLogLevel(namespace=contentCls.__name__, levelStr='debug')
+    log_level = 'info'
+    if config['DEBUG']:
+        log_level = 'debug'
+    setLogLevel(namespace='mqtt', levelStr=log_level)
+    setLogLevel(namespace=contentCls.__name__, levelStr=log_level)
 
     factory = MQTTFactory(profile=MQTTFactory.PUBLISHER)
     myEndpoint = clientFromString(reactor, Config().get('MQTT_BROKER_CONN_STRING'))
