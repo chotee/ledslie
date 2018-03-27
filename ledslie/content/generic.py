@@ -129,7 +129,7 @@ class GenericContent(ClientService):
     def publish(self, topic, message, qos=0, retain=False):
         if hasattr(message, 'serialize'):
             message = message.serialize()
-        self.log.info("To '{topic}', Published: '{data}'", topic=topic, data=message)
+        self.log.debug("To '{topic}', Published: '{data}'", topic=topic, data=message)
         return self.protocol.publish(topic, message, qos, retain)
 
     def remove_display(self, program_name):
