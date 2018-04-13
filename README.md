@@ -36,6 +36,11 @@ To deploy to the machine (only works when in the space)
 
 `$ cd deploy; ansible-playbook -i techinc ledslie-install.yml`
 
+For a faster deploy when only existing programs are being updated there's
+
+`--tags update`
+
+
 ## Testing
 
 There are unittests in [tests](ledslie/tests). The test runner is [pytest](https://docs.pytest.org/en/latest/)

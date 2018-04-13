@@ -58,7 +58,7 @@ class Catalog(object):
         start_byte = last_line_start_byte + program_nr * marker_width
         for frame in frames:
             for b_nr in range(start_byte, start_byte+marker_width):
-                frame.img_data[b_nr] |= 64
+                frame.img_data[b_nr] |= 128
             yield frame
 
 
