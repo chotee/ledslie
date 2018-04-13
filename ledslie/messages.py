@@ -40,7 +40,7 @@ class GenericProgram(GenericMessage):
 
 
 class Frame(GenericMessage):
-    def __init__(self, img_data, duration):
+    def __init__(self, img_data: bytearray, duration: int):
         self.img_data = img_data
         self.duration = duration
 
@@ -70,7 +70,7 @@ class FrameSequence(GenericProgram):
         self.prio = seq_info.get('prio', None)
         for image_data_encoded, image_info in seq_images:
             try:
-                image_data = DeserializeFrame(image_data_encoded)
+                image_data = bytearray(DeserializeFrame(image_data_encoded))
             except binascii.Error:
                 return
             if len(image_data) != self._config.get('DISPLAY_SIZE'):
