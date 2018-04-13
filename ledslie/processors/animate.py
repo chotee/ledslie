@@ -34,6 +34,8 @@ def AnimateStill(still: Frame):
     seq = FrameSequence()
     width, height = Config().get('DISPLAY_WIDTH'), Config().get('DISPLAY_HEIGHT')
     seq_duration = still.duration
+    if not seq_duration:
+        seq_duration = Config()['DISPLAY_DEFAULT_DELAY']
     steps_ms = int(seq_duration / height)
     still_img = still.raw()
     still.duration = steps_ms

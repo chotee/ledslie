@@ -98,8 +98,12 @@ class TestScheduler(object):
 
     def test_AnimateStill(self, sched):
         seq = FrameSequence()
-        img_data = bytes(bytearray(Config().get('DISPLAY_SIZE')))
+        img_data = bytearray(Config().get('DISPLAY_SIZE'))
         seq.add_frame(Frame(img_data, 2000))
         animated_seq = AnimateStill(seq[0])
         assert Config().get('DISPLAY_HEIGHT') == len(animated_seq)
-        assert sum([frame.duration for frame in animated_seq.frames])
+        assert sum([frame.duration for frame in animated_seq.frames]) == 2000
+
+        seq.add_frame(Frame(img_data, None))
+        animated_seq = AnimateStill(seq[1])
+        assert Config()['DISPLAY_DEFAULT_DELAY'] == sum([frame.duration for frame in animated_seq.frames])
