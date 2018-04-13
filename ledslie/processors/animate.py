@@ -34,13 +34,15 @@ def AnimateStill(still: Frame):
     seq = FrameSequence()
     width, height = Config().get('DISPLAY_WIDTH'), Config().get('DISPLAY_HEIGHT')
     seq_duration = still.duration
+    if not seq_duration:
+        seq_duration = Config()['DISPLAY_DEFAULT_DELAY']
     steps_ms = int(seq_duration / height)
     still_img = still.raw()
     still.duration = steps_ms
     for nr in range(height):
         frame = bytearray(still_img)
         frame[width*nr-1] = 0xff
-        seq.add_frame(Frame(bytes(frame), steps_ms))
+        seq.add_frame(Frame(frame, steps_ms))
     seq[-1].duration += seq_duration - seq.duration  # Add the steps_ms missing because of the division.
     return seq
 

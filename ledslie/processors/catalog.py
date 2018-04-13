@@ -40,11 +40,26 @@ class Catalog(object):
             if prev_program and self.intermezzo_func:
                 intermezzo = self.intermezzo_func(prev_program.last(), current_program.first())
                 if intermezzo:
-                    yield from intermezzo
+                    yield from intermezzo  # Return the list of intermezzo frames.
             if self.now() > self.program_retirement[current_program.program_id]:
-                self.programs.remove(current_program)
-            yield from current_program.frames
+                self.programs.remove(current_program)  # Program is removed as it's now retired.
+            nr_of_programs = len(self.programs)
+            if nr_of_programs > 0:
+                yield from self.mark_program_progress(current_program.frames, self.programs.pos, nr_of_programs)
+            else:
+                yield from current_program
             prev_program = current_program
+
+    def mark_program_progress(self, frames: FrameSequence, program_nr: int, nr_of_programs: int):
+        width = self.config['DISPLAY_WIDTH']
+        height = self.config['DISPLAY_HEIGHT']
+        marker_width = int(width / nr_of_programs)
+        last_line_start_byte = width * (height-1)
+        start_byte = last_line_start_byte + program_nr * marker_width
+        for frame in frames:
+            for b_nr in range(start_byte, start_byte+marker_width):
+                frame.img_data[b_nr] |= 64
+            yield frame
 
 
     def add_program(self, program_name: str, seq: FrameSequence):

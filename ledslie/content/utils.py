@@ -100,6 +100,15 @@ class CircularBuffer(object):
             self._curr = 0
             return self._elems[self._curr][0]
 
+    @property
+    def pos(self) -> int:
+        """
+        Returns the current position in the circular buffer
+        :return: The position
+        :rtype: int
+        """
+        return self._curr
+
     def __iter__(self):
         return self
 
