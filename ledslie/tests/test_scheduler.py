@@ -48,9 +48,9 @@ class TestScheduler(object):
         sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')
         image_sequence = [
-            [SerializeFrame(b'0' * image_size), {'duration': 100}],
-            [SerializeFrame(b'1' * image_size), {'duration': 100}],
-            [SerializeFrame(b'2' * image_size), {'duration': 100}],
+            [SerializeFrame(bytearray(b'0' * image_size)), {'duration': 100}],
+            [SerializeFrame(bytearray(b'1' * image_size)), {'duration': 100}],
+            [SerializeFrame(bytearray(b'2' * image_size)), {'duration': 100}],
         ]
         payload = json.dumps([image_sequence, sequence_info])
         return payload.encode()
@@ -63,17 +63,17 @@ class TestScheduler(object):
         sched.send_next_frame()  # Frame 0
         assert 1 == len(sched.protocol._published_messages)
         assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert b'0' * image_size == sched.protocol._published_messages[-1][1]
+        assert bytearray(b'0000') == sched.protocol._published_messages[-1][1][0:4]
 
         sched.send_next_frame()  # Frame 1
         assert 2 == len(sched.protocol._published_messages)
         assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert b'1' * image_size == sched.protocol._published_messages[-1][1]
+        assert bytearray(b'1111') == sched.protocol._published_messages[-1][1][0:4]
 
         sched.send_next_frame()  # Frame 2
         assert 3 == len(sched.protocol._published_messages)
         assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert b'2' * image_size == sched.protocol._published_messages[-1][1]
+        assert bytearray(b'2222') == sched.protocol._published_messages[-1][1][0:4]
         #
         sched.send_next_frame()  # End of program!
 
@@ -98,8 +98,12 @@ class TestScheduler(object):
 
     def test_AnimateStill(self, sched):
         seq = FrameSequence()
-        img_data = bytes(bytearray(Config().get('DISPLAY_SIZE')))
+        img_data = bytearray(Config().get('DISPLAY_SIZE'))
         seq.add_frame(Frame(img_data, 2000))
         animated_seq = AnimateStill(seq[0])
         assert Config().get('DISPLAY_HEIGHT') == len(animated_seq)
-        assert sum([frame.duration for frame in animated_seq.frames])
+        assert sum([frame.duration for frame in animated_seq.frames]) == 2000
+
+        seq.add_frame(Frame(img_data, None))
+        animated_seq = AnimateStill(seq[1])
+        assert Config()['DISPLAY_DEFAULT_DELAY'] == sum([frame.duration for frame in animated_seq.frames])

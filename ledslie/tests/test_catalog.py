@@ -21,18 +21,23 @@ class TestCatalog(object):
 
     def _create_and_add_sequence(self, catalog, program_name, sequence_content, valid_time=None):
         seq = FrameSequence()
+        # Frame(bytearray(b'Bar') * int(3456/3)
         seq.program = program_name
-        seq.frames = sequence_content
+        if isinstance(sequence_content[0], Frame):
+            seq.frames = sequence_content
+        else:
+            seq.frames = [Frame(bytearray(f.encode() * int(3456 / len(f))), 10) for f in sequence_content]
         seq.valid_time = valid_time
         catalog.add_program(program_name, seq)
+        return seq
 
     def test_get_frames(self):
         catalog = self.test_init()
         iter = catalog.frames_iter()
-        assert "Bar" == next(iter)
-        assert "Quux" == next(iter)
-        assert "Foo" == next(iter)
-        assert "Bar" == next(iter)
+        assert bytearray(b"Bar")  == next(iter).raw()[0:3]
+        assert bytearray(b"Quux") == next(iter).raw()[0:4]
+        assert bytearray(b"Foo")  == next(iter).raw()[0:3]
+        assert bytearray(b"Bar")  == next(iter).raw()[0:3]
 
     def test_empty_catalog(self):
         catalog = Catalog()
@@ -57,21 +62,21 @@ class TestCatalog(object):
         catalog.now = lambda: 10
         self._create_and_add_sequence(catalog, "First", ["Foo"])
         f_iter = catalog.frames_iter()
-        assert "Foo" == next(f_iter)  # Only foo is shown
-        assert "Foo" == next(f_iter)
+        assert bytearray(b"Foo") == next(f_iter).raw()[0:3]  # Only foo is shown
+        assert bytearray(b"Foo") == next(f_iter).raw()[0:3]
         catalog.now = lambda: 20  # Time passes
         self._create_and_add_sequence(catalog, "Second", ["Bar"])
-        assert "Bar" == next(f_iter)
-        assert "Foo" == next(f_iter)
-        assert "Bar" == next(f_iter)
+        assert bytearray(b"Bar") == next(f_iter).raw()[0:3]
+        assert bytearray(b"Foo") == next(f_iter).raw()[0:3]
+        assert bytearray(b"Bar") == next(f_iter).raw()[0:3]
         catalog.now = lambda: 20+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Foo" == next(f_iter)  # Foo now gets retired.
-        assert "Bar" == next(f_iter)
-        assert "Bar" == next(f_iter)
+        assert bytearray(b"Foo") == next(f_iter).raw()[0:3]  # Foo now gets retired.
+        assert bytearray(b"Bar") == next(f_iter).raw()[0:3]
+        assert bytearray(b"Bar") == next(f_iter).raw()[0:3]
         self._create_and_add_sequence(catalog, "Second", ["Bar2"])  # "Second" got updated
-        assert "Bar2" == next(f_iter)
+        assert bytearray(b"Bar2") == next(f_iter).raw()[0:4]
         catalog.now = lambda: 30+Config()["PROGRAM_RETIREMENT_AGE"]
-        assert "Bar2" == next(f_iter)  # Still exists, because "Second" was updated.
+        assert bytearray(b"Bar2") == next(f_iter).raw()[0:4]  # Still exists, because "Second" was updated.
 
     def test_valid_for(self):
         catalog = Catalog()
@@ -80,16 +85,16 @@ class TestCatalog(object):
         self._create_and_add_sequence(catalog, "long", ['Long'])
         catalog.now = lambda: 15
         self._create_and_add_sequence(catalog, "short", ['Short'], valid_time=30)
-        assert "Short" == next(f_iter)
-        assert "Long" == next(f_iter)
+        assert bytearray(b"Short") == next(f_iter).raw()[0:5]
+        assert bytearray(b"Long") == next(f_iter).raw()[0:4]
         catalog.now = lambda: 40
-        assert "Short" == next(f_iter)
-        assert "Long" == next(f_iter)
+        assert bytearray(b"Short") == next(f_iter).raw()[0:5]
+        assert bytearray(b"Long") == next(f_iter).raw()[0:4]
         catalog.now = lambda: 46  # Now the short program should be retired.
-        assert "Short" == next(f_iter)
-        assert "Long" == next(f_iter)
-        assert "Long" == next(f_iter)
-        assert "Long" == next(f_iter)
+        assert bytearray(b"Short") == next(f_iter).raw()[0:5]
+        assert bytearray(b"Long") == next(f_iter).raw()[0:4]
+        assert bytearray(b"Long") == next(f_iter).raw()[0:4]
+        assert bytearray(b"Long") == next(f_iter).raw()[0:4]
 
     def test_intermezzo_wipe(self):
         catalog = Catalog()
@@ -101,3 +106,11 @@ class TestCatalog(object):
         assert 0xff == res.raw()[0]
         res2 = next(f_iter)
         assert 0x0 == res2.raw()[0]
+
+    def test_mark_program_progress(self):
+        catalog = Catalog()
+        seq = self._create_and_add_sequence(catalog, 'first',  [Frame(bytearray(b'\xff'*3456), 10)])
+        gen = catalog.mark_program_progress(seq, 0, 5)
+        next(gen)
+        gen = catalog.mark_program_progress(seq, 4, 5)
+        next(gen)
