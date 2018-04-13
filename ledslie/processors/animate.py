@@ -42,7 +42,7 @@ def AnimateStill(still: Frame):
     for nr in range(height):
         frame = bytearray(still_img)
         frame[width*nr-1] = 0xff
-        seq.add_frame(Frame(bytes(frame), steps_ms))
+        seq.add_frame(Frame(frame, steps_ms))
     seq[-1].duration += seq_duration - seq.duration  # Add the steps_ms missing because of the division.
     return seq
 

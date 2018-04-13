@@ -53,7 +53,7 @@ class Progress(GenericContent):
         image.extend(self._create_graph_line(self._create_day_progress(now)))
         image.extend(self._create_graph_line(self._create_month_progress(now)))
         image.extend(self._create_graph_line(self._create_year_progress(now)))
-        frame = Frame(bytes(image), duration=self.config['PROGRESS_DISPLAY_DURATION'])
+        frame = Frame(image, duration=self.config['PROGRESS_DISPLAY_DURATION'])
         seq.add_frame(frame)
         seq.program = "progress"
         d = self.publish(topic=LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + seq.program, message=seq)

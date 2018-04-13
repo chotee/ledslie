@@ -162,7 +162,7 @@ class Typesetter(GenericProcessor):
                 missing_lines = 3 - len(lines) % 3
                 for c in range(missing_lines):
                     MarkupLine(image, "", font)
-            seq.add_frame(Frame(bytes(image), duration=duration))
+            seq.add_frame(Frame(image, duration=duration))
         else:
             line_duration = msg.line_duration if msg.line_duration is not None else self.config['DISPLAY_LINE_DURATION']
             seq.extend(AnimateVerticalScroll(image, line_duration))
@@ -179,7 +179,7 @@ class Typesetter(GenericProcessor):
         char_width = self._char_display_width()
         fs.program = msg.program
         alert = self.typeset_1line("Space Alert!", 20)
-        alert_neg = bytes([(~x & 0xff) for x in alert])
+        alert_neg = bytearray([(~x & 0xff) for x in alert])
         fs.add_frame(Frame(alert, duration=200))
         fs.add_frame(Frame(alert_neg, duration=200))
         fs.add_frame(Frame(alert, duration=200))
