@@ -11,5 +11,6 @@ LEDSLIE_TOPIC_TYPESETTER_3LINES      = "ledslie/typesetter/1/3lines"
 LEDSLIE_TOPIC_TYPESETTER_SIMPLE_TEXT = "ledslie/text"
 LEDSLIE_TOPIC_STATS_BASE             = "ledslie/stats/1/"
 LEDSLIE_TOPIC_ALERT                  = "ledslie/alert/1/"
+LEDSLIE_TOPIC_SCHEDULER_PROGRAMS     = "ledslie/scheduler/1/programs"
 
 ALERT_PRIO_STRING = 'alert'

@@ -47,6 +47,7 @@ class TestCatalog(object):
             pass
         else:
             assert "Should not get here!"
+        assert [] == catalog.list_current_programs()
 
     def test_remove_program(self):
         catalog = self.test_init()

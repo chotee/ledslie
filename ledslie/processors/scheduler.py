@@ -25,13 +25,14 @@
 # each name only the last sequence is retained. THis allows producers to provide updated information.
 #
 # An image is simply a sequence of one frame
+import json
 
 from twisted.internet import reactor
 from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
-    LEDSLIE_TOPIC_SERIALIZER
+    LEDSLIE_TOPIC_SERIALIZER, LEDSLIE_TOPIC_SCHEDULER_PROGRAMS
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.catalog import Catalog
@@ -76,6 +77,8 @@ class Scheduler(GenericProcessor):
         self.catalog.add_program(program_name, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
+        content = json.dumps(self.catalog.list_current_programs()).encode()
+        self.protocol.publish(LEDSLIE_TOPIC_SCHEDULER_PROGRAMS, content, 0, retain=False)
 
     def get_program_id(self, topic):
         if topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED:

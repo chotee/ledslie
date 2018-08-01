@@ -95,3 +95,11 @@ class Catalog(object):
         :rtype: bool
         """
         return program_name in self.program_name_ids
+
+    def list_current_programs(self):
+        """
+        Returns the list of names of programs in the catalog
+        :return: list with the names of the programs
+        :rtype: list
+        """
+        return list(self.program_name_ids.keys())
