@@ -36,7 +36,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.catalog import Catalog
-from ledslie.processors.intermezzos import IntermezzoWipe
+from ledslie.processors.intermezzos import IntermezzoWipe, IntermezzoInvaders
 from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
@@ -56,6 +56,7 @@ class Scheduler(GenericProcessor):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
         self.catalog.add_intermezzo(IntermezzoWipe)
+        self.catalog.add_intermezzo(IntermezzoInvaders)
         self.sequencer = None
         self.frame_iterator = None
 
