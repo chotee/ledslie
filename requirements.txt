@@ -16,3 +16,4 @@ python-dateutil
 pytz
 jsonpath-rw
 astral
+paho-mqtt
