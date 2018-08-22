@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import logging
+import time
 
-import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
+# import paho.mqtt.client as mqtt
 import requests
 
 from defaults import MQTT_KEEPALIVE, MQTT_BROKER_PORT, MQTT_BROKER_URL, SPACESTATE_MQTT_TOPIC, SPACESTATE_URL, \
@@ -10,7 +12,7 @@ from defaults import MQTT_KEEPALIVE, MQTT_BROKER_PORT, MQTT_BROKER_URL, SPACESTA
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-client = mqtt.Client()
+# client = mqtt.Client()
 
 
 def retrieve_state(url):
@@ -24,18 +26,24 @@ def retrieve_state(url):
 
 
 def main():
-    log.warning("starting spacestate.")
-    client.enable_logger(log)
-    client.will_set(SPACESTATE_MQTT_TOPIC, payload='UNKNOWN', qos=1, retain=True)
-    client.connect(MQTT_BROKER_URL, MQTT_BROKER_PORT, MQTT_KEEPALIVE)
-    log.info("Connected")
+    old_state=None
+    log.warning("Starting spacestate.")
     while True:
         log.info("Loop")
         state = retrieve_state(SPACESTATE_URL)
-        res = client.publish(SPACESTATE_MQTT_TOPIC, payload=state, qos=2, retain=True)
+        if not old_state or old_state != state:
+            log.debug("publishing '%s'", state)
+            publish.single(topic=SPACESTATE_MQTT_TOPIC, payload=state, qos=2, retain=True,
+                           hostname=MQTT_BROKER_URL, port=MQTT_BROKER_PORT)
+            old_state = state
+            log.debug("Done")
+        log.debug("sleeping for %s", SPACESTATE_POLL_FREQ)
+        time.sleep(SPACESTATE_POLL_FREQ)
+        # res = client.publish(SPACESTATE_MQTT_TOPIC, payload=state, qos=2, retain=True)
         # res.wait_for_publish()
-        log.info("Published %s (%s)", state, res.mid)
-        client.loop(timeout=SPACESTATE_POLL_FREQ)
+        # log.info("Published %s (%s)", state, res.mid)
+        # client.loop(timeout=SPACESTATE_POLL_FREQ)
+
 
 if __name__ == '__main__':
     main()
