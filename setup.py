@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pip.req import parse_requirements
+from pip._internal.req import parse_requirements
 from setuptools import setup, find_packages
 
 requirements = parse_requirements('./requirements.txt', session=False)
@@ -16,6 +16,7 @@ setup(
             'interface/templates/*',
             # 'defaults.conf',
         ],
+        'spacestate': [],
         'processors': [
             'resources'
         ],
