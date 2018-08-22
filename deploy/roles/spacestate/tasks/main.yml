@@ -1,0 +1,17 @@
+# Software already gets installed by the ledslie.
+
+- name: Installing systemd content templates
+  template:
+    src: "spacestate.service-tmpl"
+    dest: "/etc/systemd/system/spacestate.service"
+
+- name: Reload systemd config
+  command: systemctl daemon-reload
+
+- name: Start ledslie content services
+  systemd:
+    name: "spacestate"
+    state: restarted
+    enabled: yes
+  tags:
+    - update

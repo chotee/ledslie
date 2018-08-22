@@ -1,0 +1,11 @@
+[Unit]
+Description=Spacestate publisher
+After=network.target
+
+[Service]
+User=nobody
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/spacestate/run.py
+
+[Install]
+WantedBy=multi-user.target
+
