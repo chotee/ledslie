@@ -9,7 +9,7 @@ import requests
 from defaults import MQTT_KEEPALIVE, MQTT_BROKER_PORT, MQTT_BROKER_URL, SPACESTATE_MQTT_TOPIC, SPACESTATE_URL, \
     SPACESTATE_POLL_FREQ
 
-logging.basicConfig(level=logging.info)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
@@ -17,7 +17,7 @@ def retrieve_state(url):
     req = requests.get(url)
     if req.status_code == 200:
         state = req.text
-        log.info("Retrieved state '%s'", state)
+        log.debug("Retrieved state '%s'", state)
         return state
     else:
         return None
