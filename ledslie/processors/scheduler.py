@@ -26,12 +26,14 @@
 #
 # An image is simply a sequence of one frame
 
+
 from twisted.internet import reactor
+from twisted.internet.protocol import Protocol
 from twisted.logger import Logger
+from twisted.internet.serialport import SerialPort as RealSerialPort
 
 from ledslie.config import Config
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, \
-    LEDSLIE_TOPIC_SERIALIZER
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_ERROR
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.catalog import Catalog
@@ -41,6 +43,8 @@ from ledslie.processors.service import CreateService, GenericProcessor
 # ----------------
 # Global variables
 # ----------------
+
+serial_port = None
 
 log = Logger()
 
@@ -57,6 +61,7 @@ class Scheduler(GenericProcessor):
         self.catalog.add_intermezzo(IntermezzoWipe)
         self.sequencer = None
         self.frame_iterator = None
+        self.led_screen = None
 
     def onPublish(self, topic, payload, qos, dup, retain, msgId):
         '''
@@ -91,19 +96,58 @@ class Scheduler(GenericProcessor):
             frame = next(self.frame_iterator)
         except KeyError:
             return
-        self.publish_frame(frame)
+        try:
+            self.led_screen.publish_frame(frame)
+        except FrameException as exc:
+            log.error(str(exc))
+            self.publish(LEDSLIE_ERROR + "/scheduler", "Program: %s: %s" % (
+                self.catalog.current_program.name, str(exc)))
         duration = min(10, frame.duration/1000)
         self.sequencer = self.reactor.callLater(duration, self.send_next_frame)
 
+
+class FrameException(RuntimeError):
+    pass
+
+
+class LEDScreen(Protocol):
+    def connectionMade(self):
+        global serial_port
+        serial_port = self
+        log.info('LEDScreen device: %s is connected.' % serial_port)
+
     def publish_frame(self, frame):
-        # d = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=SerializeFrame(frame.raw()))
-        d = self.publish(topic=LEDSLIE_TOPIC_SERIALIZER, message=frame.raw())
-        d.addErrback(self._logPublishFailure)
-        return d
+        self.transport.write(self._prepare_image(frame.raw()))
+
+    def _prepare_image(self, image_data):
+        if len(image_data) != int(config.get("DISPLAY_SIZE")):
+            raise FrameException("WRONG frame size. Expected %d but got %d." % (
+                len(image_data), config.get("DISPLAY_SIZE")))
+        shifted_data = bytearray()
+        for b in image_data:
+            shifted_data.append(b >> 1)  # Downshift the data one byte. making the highbyte 0.
+        shifted_data.append(1 << 7)  ## end with a new frame marker, a byte with the high byte 1
+        return shifted_data
+
+
+class FakeSerialPort(object):
+    def __init__(self, protocol):
+        log.warn("Starting the FakeSerialPort")
+        self.protocol = protocol
+        self.protocol.transport = self
+
+    def write(self, data):
+        log.info("FAKE WRITING #%d bytes" % len(data))
 
 
 if __name__ == '__main__':
     log = Logger(__file__)
-    Config(envvar_silent=False)
-    CreateService(Scheduler)
+    config = Config(envvar_silent=False)
+    scheduler = CreateService(Scheduler)
+    led_screen = LEDScreen()
+    if config.get('SERIAL_PORT') == 'fake':
+        FakeSerialPort(led_screen)
+    else:
+        RealSerialPort(led_screen, config.get('SERIAL_PORT'), reactor, baudrate=config.get('SERIAL_BAUDRATE'))
+    scheduler.led_screen = led_screen
     reactor.run()

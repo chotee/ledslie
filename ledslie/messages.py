@@ -58,6 +58,7 @@ class FrameSequence(GenericProgram):
     def __init__(self):
         super().__init__()
         self._config = Config()
+        self.name = None
         self.frames = []
         self.prio = None
         self.frame_nr = -1
