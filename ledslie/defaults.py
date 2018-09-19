@@ -70,5 +70,5 @@ MPD_PLAYING_UPDATE = 10
 MPD_HOST = 'mpd.ti'
 MPD_PORT = 6600
 
-INTERMEZZO_WIPE_FRAME_DELAY = 12  # Delay in miliseconds between wipe frames
-INTERMEZZO_WIPE_FRAME_STEP_SIZE = 4  # number of pixels to move with each wipe frame.
+INTERMEZZO_WIPE_FRAME_DELAY = 10  # Delay in miliseconds between wipe frames
+INTERMEZZO_WIPE_FRAME_STEP_SIZE = 3  # number of pixels to move with each wipe frame.
