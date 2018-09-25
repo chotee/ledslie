@@ -19,6 +19,7 @@
     - git
     - python-pip
     - python-virtualenv
+    - libopenjp2-7
 
 - name: Create Python virtualenv
   command: virtualenv pyenv -p python3
