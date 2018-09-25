@@ -50,15 +50,28 @@ class FakeMqttProtocol(FakeProtocol):
 
 class FakeLogger(object):
     def error(self, msg, **kwargs):
-        pass
-        #raise RuntimeError(msg.format(**kwargs))
+        raise RuntimeError(msg.format(**kwargs))
+        # pass
 
     def info(self, msg, **kwargs):
+        # raise RuntimeError(msg.format(**kwargs))
         pass
 
     def debug(self, msg, **kwargs):
+        # raise RuntimeError(msg.format(**kwargs))
         pass
 
+    def warn(self, msg, **kwargs):
+        # raise RuntimeError(msg.format(**kwargs))
+        pass
+
+
+class FakeLEDScreen(object):
+    def __init__(self):
+        self._published_frames = []
+
+    def publish_frame(self, data):
+        self._published_frames.append(data)
 
 # class FakeMQTTMessage(object):
 #     def __init__(self, topic=None, payload=None):
