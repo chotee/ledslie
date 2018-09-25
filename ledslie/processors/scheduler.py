@@ -145,9 +145,13 @@ if __name__ == '__main__':
     config = Config(envvar_silent=False)
     scheduler = CreateService(Scheduler)
     led_screen = LEDScreen()
-    if config.get('SERIAL_PORT') == 'fake':
+    serial_port = config.get('SERIAL_PORT')
+    if serial_port == 'fake':
+        log.warn("FAKE SERIAL SELECTED.")
         FakeSerialPort(led_screen)
     else:
-        RealSerialPort(led_screen, config.get('SERIAL_PORT'), reactor, baudrate=config.get('SERIAL_BAUDRATE'))
+        baudrate = config.get('SERIAL_BAUDRATE')
+        log.info("REAL Serialport %s @ %s" % (serial_port, baudrate))
+        RealSerialPort(led_screen, serial_port, reactor, baudrate=baudrate)
     scheduler.led_screen = led_screen
     reactor.run()
