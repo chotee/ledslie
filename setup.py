@@ -16,6 +16,7 @@ setup(
             'interface/templates/*',
             # 'defaults.conf',
         ],
+        'spacestate': [],
         'processors': [
             'resources'
         ],

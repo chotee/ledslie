@@ -7,17 +7,17 @@ from ledslie.config import Config
 from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_SEQUENCES_PROGRAMS
 from ledslie.messages import FrameSequence, SerializeFrame, Frame
 from ledslie.processors.scheduler import Scheduler
-from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger
+from ledslie.tests.fakes import FakeMqttProtocol, FakeLogger, FakeLEDScreen
 from ledslie.processors.animate import AnimateStill
 
 
 class TestScheduler(object):
-
     @pytest.fixture
     def sched(self):
         endpoint = None
         factory = None
         s = Scheduler(endpoint, factory)
+        s.led_screen = FakeLEDScreen()
         s.protocol = FakeMqttProtocol()
         return s
 
@@ -44,7 +44,7 @@ class TestScheduler(object):
         sched.onPublish(topic, b"", qos=0, dup=False, retain=False, msgId=0)
         assert sched.catalog.is_empty()
 
-    def _test_sequence(self, sched):
+    def _test_sequence(self, sched: Scheduler):
         sequence_info = {}
         image_size = sched.config.get('DISPLAY_SIZE')
         image_sequence = [
@@ -58,22 +58,19 @@ class TestScheduler(object):
     def test_send_next_frame(self, sched):
         image_size = sched.config.get('DISPLAY_SIZE')
         sched.catalog.add_program(None, FrameSequence().load(self._test_sequence(sched)))
-        assert 0 == len(sched.protocol._published_messages)
+        assert 0 == len(sched.led_screen._published_frames)
 
         sched.send_next_frame()  # Frame 0
-        assert 1 == len(sched.protocol._published_messages)
-        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert bytearray(b'0000') == sched.protocol._published_messages[-1][1][0:4]
+        assert 1 == len(sched.led_screen._published_frames)
+        assert bytearray(b'0000') == sched.led_screen._published_frames[-1].img_data[0:4]
 
         sched.send_next_frame()  # Frame 1
-        assert 2 == len(sched.protocol._published_messages)
-        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert bytearray(b'1111') == sched.protocol._published_messages[-1][1][0:4]
+        assert 2 == len(sched.led_screen._published_frames)
+        assert bytearray(b'1111') == sched.led_screen._published_frames[-1].img_data[0:4]
 
         sched.send_next_frame()  # Frame 2
-        assert 3 == len(sched.protocol._published_messages)
-        assert 'ledslie/frames/1' == sched.protocol._published_messages[-1][0]
-        assert bytearray(b'2222') == sched.protocol._published_messages[-1][1][0:4]
+        assert 3 == len(sched.led_screen._published_frames)
+        assert bytearray(b'2222') == sched.led_screen._published_frames[-1].img_data[0:4]
         #
         sched.send_next_frame()  # End of program!
 

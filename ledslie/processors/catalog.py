@@ -14,6 +14,7 @@ class Catalog(object):
         self.program_retirement = {}
         self.alert_program = None
         self.intermezzo_func = None
+        self.current_program = None
 
     def add_intermezzo(self, intermezzo_func):
         self.intermezzo_func = intermezzo_func
@@ -36,19 +37,19 @@ class Catalog(object):
         """
         prev_program = None
         while True:
-            current_program = next(self.programs)
+            self.current_program = next(self.programs)
             if prev_program and self.intermezzo_func:
-                intermezzo = self.intermezzo_func(prev_program.last(), current_program.first())
+                intermezzo = self.intermezzo_func(prev_program.last(), self.current_program.first())
                 if intermezzo:
                     yield from intermezzo  # Return the list of intermezzo frames.
-            if self.now() > self.program_retirement[current_program.program_id]:
-                self.programs.remove(current_program)  # Program is removed as it's now retired.
+            if self.now() > self.program_retirement[self.current_program.program_id]:
+                self.programs.remove(self.current_program)  # Program is removed as it's now retired.
             nr_of_programs = len(self.programs)
             if nr_of_programs > 0:
-                yield from self.mark_program_progress(current_program.frames, self.programs.pos, nr_of_programs)
+                yield from self.mark_program_progress(self.current_program.frames, self.programs.pos, nr_of_programs)
             else:
-                yield from current_program
-            prev_program = current_program
+                yield from self.current_program
+            prev_program = self.current_program
 
     def mark_program_progress(self, frames: FrameSequence, program_nr: int, nr_of_programs: int):
         width = self.config['DISPLAY_WIDTH']
@@ -71,7 +72,7 @@ class Catalog(object):
         :type seq: FrameSequence
         """
         assert isinstance(seq, FrameSequence), "Program is not a ImageSequence but: %s" % seq
-
+        seq.name = program_name
         if program_name not in self.program_name_ids:
             program_id = self.programs.add(seq)
             self.program_name_ids[program_name] = program_id

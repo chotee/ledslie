@@ -6,3 +6,4 @@
     - role: ledslie-site
     - { role: ledslie-processors, become: yes }
     - { role: ledslie-content, become: yes }
+    - { role: spacestate, become: yes }

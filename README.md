@@ -23,6 +23,9 @@ Ledslie has various dependencies on other projects.
 * [Ansible](https://www.ansible.com/) does the Deployment from the [deploy](deploy/) directory. 
 * [Pillow](https://python-pillow.org/) is used for image processing.
 
+## Bonus tracks:
+* [Spacestate](spacestate/run.py) maintains the 'spacestate' MQTT topic with the current spacestate
+
 ## Deploying
 To test, use [vagrant](https://www.vagrantup.com/) to run a VM that has all the system running (except, likely, the display)
 
