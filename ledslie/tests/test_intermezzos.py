@@ -10,8 +10,10 @@ class TestIntermezzo(object):
         prev_frame = Frame(bytearray(b'0' * image_size), 1)
         next_frame = Frame(bytearray(b'1' * image_size), 1)
         seq = IntermezzoWipe(prev_frame, next_frame)
+        f_nr = 0
         for frame in seq:
-            assert image_size == len(frame.raw()), "Frame length relative to expected: %s" % (len(frame.raw())-image_size)
+            assert image_size == len(frame.raw()), "Frame %d: length relative to expected: %s" % (f_nr, len(frame.raw())-image_size)
+            f_nr += 1
 
 
 def test_IntermezzoInvaders():

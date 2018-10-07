@@ -12,9 +12,9 @@ def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
     seq = FrameSequence()
     height = config['DISPLAY_HEIGHT']
     width = config['DISPLAY_WIDTH']
-    sep = bytearray([0x00, 0x00, 0x40, 0x80, 0x80, 0x80, 0xff, 0x00])
+    sep = bytearray([0x00, 0x00, 0x40, 0x60, 0x80, 0x80, 0xff, 0x00])
     sep_len = len(sep)
-    for step in range(wipe_frame_step_size, width-wipe_frame_step_size, wipe_frame_step_size):
+    for step in range(wipe_frame_step_size, width-wipe_frame_step_size-sep_len, wipe_frame_step_size):
         img_data = bytearray()
         for row in range(0, height):
             start = width*row
