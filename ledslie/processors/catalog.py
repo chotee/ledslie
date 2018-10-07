@@ -1,4 +1,5 @@
 import time
+from random import choice
 from typing import Iterable
 
 from ledslie.config import Config
@@ -13,11 +14,11 @@ class Catalog(object):
         self.program_name_ids = {}  # Dict with names and Ids.
         self.program_retirement = {}
         self.alert_program = None
-        self.intermezzo_func = None
+        self.intermezzo_func_list = []
         self.current_program = None
 
     def add_intermezzo(self, intermezzo_func):
-        self.intermezzo_func = intermezzo_func
+        self.intermezzo_func_list.append(intermezzo_func)
 
     def now(self) -> float:
         return time.time()
@@ -51,10 +52,9 @@ class Catalog(object):
                 self.alert_program = None
 
     def _normal_program_frame(self, prev_program):
-        if prev_program and self.intermezzo_func:
-            intermezzo = self.intermezzo_func(prev_program.last(), self.current_program.first())
-            if intermezzo:
-                yield from intermezzo  # Return the list of intermezzo frames.
+        if prev_program and self.intermezzo_func_list:
+            intermezzo_func = choice(self.intermezzo_func_list)  # Pick an intermezzo
+            yield from intermezzo_func(prev_program.last(), self.current_program.first())
         if self.now() > self.program_retirement[self.current_program.program_id]:
             self.programs.remove(self.current_program)  # Program is removed as it's now retired.
         nr_of_programs = len(self.programs)
@@ -111,3 +111,11 @@ class Catalog(object):
         :rtype: bool
         """
         return program_name in self.program_name_ids
+
+    def list_current_programs(self):
+        """
+        Returns the list of names of programs in the catalog
+        :return: list with the names of the programs
+        :rtype: list
+        """
+        return list(self.program_name_ids.keys())
