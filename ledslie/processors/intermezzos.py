@@ -33,10 +33,11 @@ def _invaders(step):
         vert = 8 - i
     ba = bytearray()
     for row in range(8):
-        ba.extend([0x00]*vert)
+        ba.extend([0x00]*(vert+4))
         for invader in [invader1, invader2, invader3, invader2, invader2, invader3, invader2, invader1]:
             ba.extend(invader[phase][i] + bytearray([0x00]*8))
-        ba.extend([0x00]*(8-vert))
+        ba.extend([0x00]*(8-vert+4))
+        assert len(ba) % 144 == 0, len(ba)
     return ba
 
 
@@ -52,7 +53,8 @@ def IntermezzoInvaders(previous_frame: Frame, next_frame: Frame):
     height = config['DISPLAY_HEIGHT']
     width = config['DISPLAY_WIDTH']
     size = height*width
-    for step in range(height*2+2):  # lets go from top to bottom
+    invader_height = int(len(_invaders(0)) / width)
+    for step in range(height+invader_height+2):  # lets go from top to bottom
         img = bytearray().join([
             nxt,
             bytearray(width),  # Empty.
@@ -61,8 +63,8 @@ def IntermezzoInvaders(previous_frame: Frame, next_frame: Frame):
             prv
         ])
         if step == 0:
-            frame_data = img[-1 * size - (step * width):]
+            frame_data = img[-1*size - (step*width):]
         else:
-            frame_data = img[-1*size-(step*width):-(step*width)]
+            frame_data = img[-1*size - (step*width):-(step*width)]
         seq.add_frame(Frame(frame_data, frame_delay))
     return seq
