@@ -37,19 +37,31 @@ class Catalog(object):
         """
         prev_program = None
         while True:
-            self.current_program = next(self.programs)
-            if prev_program and self.intermezzo_func:
-                intermezzo = self.intermezzo_func(prev_program.last(), self.current_program.first())
-                if intermezzo:
-                    yield from intermezzo  # Return the list of intermezzo frames.
-            if self.now() > self.program_retirement[self.current_program.program_id]:
-                self.programs.remove(self.current_program)  # Program is removed as it's now retired.
-            nr_of_programs = len(self.programs)
-            if nr_of_programs > 0:
-                yield from self.mark_program_progress(self.current_program.frames, self.programs.pos, nr_of_programs)
+            if not self.alert_program:
+                self.current_program = next(self.programs)
+                for f in self._normal_program_frame(prev_program):
+                    yield f
+                    if self.alert_program:
+                        break
+                prev_program = self.current_program
             else:
-                yield from self.current_program
-            prev_program = self.current_program
+                while self.alert_program.alert_count > 0:
+                    self.alert_program.alert_count -= 1
+                    yield from self.alert_program
+                self.alert_program = None
+
+    def _normal_program_frame(self, prev_program):
+        if prev_program and self.intermezzo_func:
+            intermezzo = self.intermezzo_func(prev_program.last(), self.current_program.first())
+            if intermezzo:
+                yield from intermezzo  # Return the list of intermezzo frames.
+        if self.now() > self.program_retirement[self.current_program.program_id]:
+            self.programs.remove(self.current_program)  # Program is removed as it's now retired.
+        nr_of_programs = len(self.programs)
+        if nr_of_programs > 0:
+            yield from self.mark_program_progress(self.current_program.frames, self.programs.pos, nr_of_programs)
+        else:
+            yield from self.current_program
 
     def mark_program_progress(self, frames: FrameSequence, program_nr: int, nr_of_programs: int):
         width = self.config['DISPLAY_WIDTH']
@@ -73,14 +85,17 @@ class Catalog(object):
         """
         assert isinstance(seq, FrameSequence), "Program is not a ImageSequence but: %s" % seq
         seq.name = program_name
-        if program_name not in self.program_name_ids:
-            program_id = self.programs.add(seq)
-            self.program_name_ids[program_name] = program_id
+        if seq.is_alert():
+            self.alert_program = seq
         else:
-            program_id = self.program_name_ids[program_name]
-            self.programs.update(program_id, seq)
-        seq.program_id = program_id
-        self.program_retirement[program_id] = seq.retirement_age + self.now()
+            if program_name not in self.program_name_ids:
+                program_id = self.programs.add(seq)
+                self.program_name_ids[program_name] = program_id
+            else:
+                program_id = self.program_name_ids[program_name]
+                self.programs.update(program_id, seq)
+            seq.program_id = program_id
+            self.program_retirement[program_id] = seq.valid_time + self.now()
 
     def remove_program(self, program_name: str) -> None:
         program_id = self.program_name_ids[program_name]

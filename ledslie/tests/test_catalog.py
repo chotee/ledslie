@@ -27,7 +27,7 @@ class TestCatalog(object):
             seq.frames = sequence_content
         else:
             seq.frames = [Frame(bytearray(f.encode() * int(3456 / len(f))), 10) for f in sequence_content]
-        seq.valid_time = valid_time
+        seq.valid_time = valid_time if valid_time is not None else Config()['PROGRAM_RETIREMENT_AGE']
         catalog.add_program(program_name, seq)
         return seq
 
