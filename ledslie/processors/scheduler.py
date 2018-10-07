@@ -59,7 +59,6 @@ class Scheduler(GenericProcessor):
     def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
-        self.catalog.add_intermezzo(IntermezzoWipe)
         self.sequencer = None
         self.frame_iterator = None
         self.led_screen = None
