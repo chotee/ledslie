@@ -73,4 +73,4 @@ MPD_PORT = 6600
 INTERMEZZO_WIPE_FRAME_DELAY = 10  # Delay in miliseconds between wipe frames
 INTERMEZZO_WIPE_FRAME_STEP_SIZE = 3  # number of pixels to move with each wipe frame.
 
-INVADERS_FRAME_DELAY = 24  # How many milliseconds between.
+INVADERS_FRAME_DELAY = 30  # How many milliseconds between.

@@ -35,7 +35,7 @@ def _invaders(step):
     for row in range(8):
         ba.extend([0x00]*(vert+4))
         for invader in [invader1, invader2, invader3, invader2, invader2, invader3, invader2, invader1]:
-            ba.extend(invader[phase][i] + bytearray([0x00]*8))
+            ba.extend(invader[phase][row] + bytearray([0x00]*8))
         ba.extend([0x00]*(8-vert+4))
         assert len(ba) % 144 == 0, len(ba)
     return ba
