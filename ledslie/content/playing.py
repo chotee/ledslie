@@ -62,9 +62,9 @@ class MpdPlaying(GenericContent):
             self.log.debug("all publishing complete args={args!r}", args=args)
 
         playing_info = [
-            data['title'],
-            "by {}".format(data['artist']),
-            "from {}".format(data['album']),
+            data.get('title', "UNKNOWN"),
+            "by {}".format(data.get('artist', "UNKNOWN")),
+            "from {}".format(data.get('album', "UNKNOWN")),
         ]
         msg = TextTripleLinesLayout()
         msg.lines = playing_info
