@@ -46,4 +46,3 @@ class TestIntermezzoPacman:
         next_frame = Frame(bytearray(b'1' * image_size), 1)
         seq = IntermezzoPacman(prev_frame, next_frame)
         verify_length(seq, image_size)
-        assert config.get('DISPLAY_WIDTH')/config.get('PACMAN_MOVE') == len(seq)

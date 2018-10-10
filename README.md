@@ -47,3 +47,9 @@ For a faster deploy when only existing programs are being updated there's
 ## Testing
 
 There are unittests in [tests](ledslie/tests). The test runner is [pytest](https://docs.pytest.org/en/latest/)
+
+
+## Bugs
+* /ledslie/text doesn't work. errors in log.
+* animated gifs give errors in log 
+* 

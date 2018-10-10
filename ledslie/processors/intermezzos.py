@@ -33,18 +33,17 @@ def IntermezzoPacman(previous_frame: Frame, next_frame: Frame):
     seq = FrameSequence()
     height = config['DISPLAY_HEIGHT']
     width = config['DISPLAY_WIDTH']
+    spacer = bytearray([0x00, 0x00, 0x00])
     pacmans = [Pacman1, Pacman2]
     i = 0
-    for step in range(width, 0, -1*frame_move):
+    for step in range(0, width + len(spacer) + len(Pacman1[0]), frame_move):
         i += 1
         img_data = bytearray()
         for row_nr in range(height):
             prv_row = prv[row_nr*width:(row_nr+1)*width]
             nxt_row = nxt[row_nr*width:(row_nr+1)*width]
-            try:
-                img_data.extend((prv_row[:step] + pacmans[i%2][row_nr] + nxt_row)[:width])
-            except IndexError:
-                0/0
+            row = prv_row + pacmans[i % 2][row_nr] + spacer + nxt_row
+            img_data.extend(row[step:step+width])
         seq.add_frame(Frame(img_data, frame_delay))
     return seq
 

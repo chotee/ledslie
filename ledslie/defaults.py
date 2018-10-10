@@ -75,5 +75,5 @@ INTERMEZZO_WIPE_FRAME_STEP_SIZE = 3  # number of pixels to move with each wipe f
 
 INVADERS_FRAME_DELAY = 30  # How many milliseconds between.
 
-PACMAN_MOVE = 3
-PACMAN_DELAY = 30
+PACMAN_MOVE = 4
+PACMAN_DELAY = 40
