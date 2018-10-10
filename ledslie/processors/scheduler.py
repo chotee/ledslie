@@ -81,7 +81,7 @@ class Scheduler(GenericProcessor):
         self.catalog.add_program(program_name, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
-        content = json.dumps(self.catalog.list_current_programs()).encode()
+        content = json.dumps(self.catalog.list_current_programs())
         self.protocol.publish(LEDSLIE_TOPIC_SCHEDULER_PROGRAMS, content, 0, retain=False)
 
     def get_program_id(self, topic):

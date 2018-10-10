@@ -1,3 +1,5 @@
+import json
+
 from twisted.internet.test.test_tcp import FakeProtocol
 from twisted.internet.defer import succeed
 
@@ -43,7 +45,11 @@ class FakeMqttProtocol(FakeProtocol):
         return succeed("subscribed to %s" % topic)
 
     def publish(self, topic, message, qos, retain=False):
-        assert isinstance(message, (bytearray, bytes)), "type is %s, expected bytearray or bytes" % type(message)
+        if topic == 'ledslie/scheduler/1/programs':
+            assert isinstance(message, (str)), "type is %s, expected str" % type(message)
+            json.loads(message)  # Make sure it's a JSON format.
+        else:
+            assert isinstance(message, (bytearray, bytes)), "type is %s, expected bytearray or bytes" % type(message)
         self._published_messages.append((topic, message))
         return succeed(None)
 

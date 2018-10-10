@@ -49,16 +49,18 @@ def IntermezzoInvaders(previous_frame: Frame, next_frame: Frame):
     prv = previous_frame.raw()
     nxt = next_frame.raw()
     seq = FrameSequence()
-    frame_delay = 12
+    frame_delay = config['INVADERS_FRAME_DELAY']
     height = config['DISPLAY_HEIGHT']
     width = config['DISPLAY_WIDTH']
     size = height*width
     invader_height = int(len(_invaders(0)) / width)
-    for step in range(height+invader_height+2):  # lets go from top to bottom
+    for step in range(height+invader_height+4):  # lets go from top to bottom
         img = bytearray().join([
             nxt,
             bytearray(width),  # Empty.
+            bytearray(width),  # Empty.
             _invaders(step),
+            bytearray(width),  # Empty.
             bytearray(width),  # Empty.
             prv
         ])
