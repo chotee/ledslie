@@ -1,5 +1,6 @@
 from ledslie.config import Config
 from ledslie.gfx.invaders import invader3, invader2, invader1
+from ledslie.gfx.pacman import Pacman1, Pacman2
 from ledslie.messages import Frame, FrameSequence
 
 
@@ -20,6 +21,30 @@ def IntermezzoWipe(previous_frame: Frame, next_frame: Frame):
             start = width*row
             img_data.extend(nxt[start:start+step] + sep + prv[start+step+sep_len:start+width])
         seq.add_frame(Frame(img_data, wipe_frame_delay))
+    return seq
+
+
+def IntermezzoPacman(previous_frame: Frame, next_frame: Frame):
+    config = Config()
+    frame_move  = config['PACMAN_MOVE']
+    frame_delay = config['PACMAN_DELAY']
+    prv = previous_frame.raw()
+    nxt = next_frame.raw()
+    seq = FrameSequence()
+    height = config['DISPLAY_HEIGHT']
+    width = config['DISPLAY_WIDTH']
+    spacer = bytearray([0x00, 0x00, 0x00])
+    pacmans = [Pacman1, Pacman2]
+    i = 0
+    for step in range(0, width + len(spacer) + len(Pacman1[0]), frame_move):
+        i += 1
+        img_data = bytearray()
+        for row_nr in range(height):
+            prv_row = prv[row_nr*width:(row_nr+1)*width]
+            nxt_row = nxt[row_nr*width:(row_nr+1)*width]
+            row = prv_row + pacmans[i % 2][row_nr] + spacer + nxt_row
+            img_data.extend(row[step:step+width])
+        seq.add_frame(Frame(img_data, frame_delay))
     return seq
 
 

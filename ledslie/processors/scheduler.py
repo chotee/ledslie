@@ -38,7 +38,7 @@ from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.catalog import Catalog
-from ledslie.processors.intermezzos import IntermezzoWipe, IntermezzoInvaders
+from ledslie.processors.intermezzos import IntermezzoWipe, IntermezzoInvaders, IntermezzoPacman
 from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
@@ -151,6 +151,7 @@ if __name__ == '__main__':
     scheduler = CreateService(Scheduler)
     scheduler.add_intermezzo(IntermezzoWipe)
     scheduler.add_intermezzo(IntermezzoInvaders)
+    scheduler.add_intermezzo(IntermezzoPacman)
     led_screen = LEDScreen()
     serial_port = config.get('SERIAL_PORT')
     if serial_port == 'fake':
