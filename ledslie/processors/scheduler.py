@@ -25,6 +25,7 @@
 # each name only the last sequence is retained. THis allows producers to provide updated information.
 #
 # An image is simply a sequence of one frame
+import json
 
 
 from twisted.internet import reactor
@@ -33,11 +34,11 @@ from twisted.logger import Logger
 from twisted.internet.serialport import SerialPort as RealSerialPort
 
 from ledslie.config import Config
-from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_ERROR
+from ledslie.definitions import LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_ERROR, LEDSLIE_TOPIC_SCHEDULER_PROGRAMS
 from ledslie.messages import FrameSequence
 from ledslie.processors.animate import AnimateStill
 from ledslie.processors.catalog import Catalog
-from ledslie.processors.intermezzos import IntermezzoWipe
+from ledslie.processors.intermezzos import IntermezzoWipe, IntermezzoInvaders
 from ledslie.processors.service import CreateService, GenericProcessor
 
 # ----------------
@@ -58,7 +59,6 @@ class Scheduler(GenericProcessor):
     def __init__(self, endpoint, factory):
         super().__init__(endpoint, factory)
         self.catalog = Catalog()
-        self.catalog.add_intermezzo(IntermezzoWipe)
         self.sequencer = None
         self.frame_iterator = None
         self.led_screen = None
@@ -81,6 +81,8 @@ class Scheduler(GenericProcessor):
         self.catalog.add_program(program_name, seq)
         if self.sequencer is None:
             self.sequencer = self.reactor.callLater(0, self.send_next_frame)
+        content = json.dumps(self.catalog.list_current_programs())
+        self.protocol.publish(LEDSLIE_TOPIC_SCHEDULER_PROGRAMS, content, 0, retain=False)
 
     def get_program_id(self, topic):
         if topic == LEDSLIE_TOPIC_SEQUENCES_UNNAMED:
@@ -104,6 +106,9 @@ class Scheduler(GenericProcessor):
                 self.catalog.current_program.name, str(exc)))
         duration = min(10, frame.duration/1000)
         self.sequencer = self.reactor.callLater(duration, self.send_next_frame)
+
+    def add_intermezzo(self, intermezzo):
+        self.catalog.add_intermezzo(intermezzo)
 
 
 class FrameException(RuntimeError):
@@ -144,6 +149,8 @@ if __name__ == '__main__':
     log = Logger(__file__)
     config = Config(envvar_silent=False)
     scheduler = CreateService(Scheduler)
+    scheduler.add_intermezzo(IntermezzoWipe)
+    scheduler.add_intermezzo(IntermezzoInvaders)
     led_screen = LEDScreen()
     serial_port = config.get('SERIAL_PORT')
     if serial_port == 'fake':

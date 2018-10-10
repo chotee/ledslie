@@ -61,6 +61,7 @@ class EventsContent(GenericContent):
         return failure
 
     def createEventsInfo(self):
+        self.log.debug("Getting the eventsInfo")
         d = treq.get(self.config["EVENTS_DATA_SOURCE"])
         d.addCallbacks(self.grab_http_response, self._logFailure)
         d.addCallbacks(self.parse_page, self._logFailure)
