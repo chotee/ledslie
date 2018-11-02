@@ -29,7 +29,11 @@ class GenericMessage(object):
         raise NotImplemented("Deprecated")
 
     def serialize(self):
-        return bytearray(json.dumps(self.__dict__), 'utf-8')
+        # Hack to remove self._config from the data being serialized.
+        c = self.__dict__.pop('_config')
+        data = bytearray(json.dumps(self.__dict__), 'utf-8')
+        self.__dict__['_config'] = c  # and put the config back in it's place.
+        return data
 
 
 class GenericProgram(GenericMessage):

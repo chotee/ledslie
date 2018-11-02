@@ -41,17 +41,22 @@ class RainContent(GenericContent):
         self.task.start(self.config['RAIN_UPDATE_FREQ'], now=True)
 
     def _logFailure(self, failure):
-        self.log.debug("reported failure: {message}", message=failure.getErrorMessage())
+        self.log.error("reported failure: {message}", message=failure.getErrorMessage())
         return failure
+
+    def _logSuccess(self, success, url):
+        self.log.info("Success requesting {url}", url=url)
+        return success
 
     def createForecast(self):
         url = self.config["RAIN_DATA_SOURCE"]
         self.log.debug("Grabbing rain forecast URL '%s'" % url)
-        d = treq.get(url)
+        d = treq.get(url, timeout=5)
         d.addCallbacks(self.grab_http_response, self._logFailure)
         d.addCallbacks(self.parse_forecast_results, self._logFailure)
         d.addCallbacks(self.create_forcast, self._logFailure)
         d.addCallbacks(self.publish_forcast, self._logFailure)
+        d.addCallback(self._logSuccess, url)
 
     def create_forcast(self, data):
         if data[0][0] == 0:  # It's currently dry
