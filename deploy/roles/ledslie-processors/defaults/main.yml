@@ -1,5 +1,3 @@
-ledslie_user: ledslie
-ledslie_group: ledslie
 ledslie_processor:
   - ledslie-scheduler
   - ledslie-typesetter

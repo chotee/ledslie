@@ -5,10 +5,11 @@ import serial
 
 import paho.mqtt.client as mqtt
 
-from .defaults import SERIAL_PORT, SERIAL_BAUD, MQTT_TOPIC_FROM_SERIAL, MQTT_BROKER_URL, MQTT_BROKER_PORT, \
+from defaults import SERIAL_PORT, SERIAL_BAUD, MQTT_TOPIC_FROM_SERIAL, MQTT_BROKER_URL, MQTT_BROKER_PORT, \
     MQTT_KEEPALIVE
 
-log = logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig()  # level=logging.DEBUG)
+log = logging.getLogger()
 
 s = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
 

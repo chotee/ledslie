@@ -2,7 +2,7 @@
 
 - name: Installing systemd templates
   template:
-    src: "serial2mqtt.service-tmpl"
+    src: "serial2mqtt.service"
     dest: "/etc/systemd/system/serial2mqtt.service"
 
 - name: Reload systemd config
