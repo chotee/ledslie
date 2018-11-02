@@ -1,0 +1,11 @@
+[Unit]
+Description=Serial to MQTT publisher
+After=network.target
+
+[Service]
+User=nobody
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/serial2mqtt/run.py
+
+[Install]
+WantedBy=multi-user.target
+
