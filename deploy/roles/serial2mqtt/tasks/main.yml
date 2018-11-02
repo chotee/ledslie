@@ -2,15 +2,15 @@
 
 - name: Installing systemd templates
   template:
-    src: "spacestate.service-tmpl"
-    dest: "/etc/systemd/system/spacestate.service"
+    src: "serial2mqtt.service"
+    dest: "/etc/systemd/system/serial2mqtt.service"
 
 - name: Reload systemd config
   command: systemctl daemon-reload
 
-- name: Start ledslie spacestate service
+- name: Start serial2mqtt service
   systemd:
-    name: "spacestate"
+    name: "serial2mqtt"
     state: restarted
     enabled: yes
   tags:

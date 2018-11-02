@@ -25,7 +25,7 @@ from flask_mqtt import Mqtt
 
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE, LEDSLIE_TOPIC_TYPESETTER_3LINES, \
     LEDSLIE_TOPIC_SEQUENCES_PROGRAMS, LEDSLIE_TOPIC_SEQUENCES_UNNAMED, LEDSLIE_TOPIC_ALERT
-from ledslie.messages import SerializeFrame
+from ledslie.messages import FrameSequence, Frame
 
 app = Flask(__name__)
 mqtt = Mqtt()
@@ -41,7 +41,7 @@ def send_image(sequence, program_name):
         topic = LEDSLIE_TOPIC_SEQUENCES_UNNAMED
     else:
         topic = LEDSLIE_TOPIC_SEQUENCES_PROGRAMS[:-1] + program_name
-    payload = json.dumps(sequence)
+    payload = sequence.serialize()
     mqtt.publish(topic, payload)
     return payload
 
@@ -54,10 +54,10 @@ def gif():
         im = Image.open(f)
     except OSError:
         raise UnsupportedMediaType()
-    sequence = []
-    for frame_nr, frame_raw in enumerate(ImageSequence.Iterator(im)):
-        # frame_image, frame_info =
-        sequence.append(process_frame(frame_raw))
+    sequence = FrameSequence()
+    for frame_raw in ImageSequence.Iterator(im):
+        image_data, duration = process_frame(frame_raw)
+        sequence.add_frame(Frame(image_data, duration))
     payload = send_image(sequence, program)
     return Response(payload, mimetype='application/json')
 
@@ -115,15 +115,12 @@ def process_frame(frame_raw):
     if (app.config.get("DISPLAY_WIDTH"), app.config.get("DISPLAY_HEIGHT")) != frame.size:
         frame = frame.resize((app.config.get("DISPLAY_WIDTH"), app.config.get("DISPLAY_HEIGHT")))
     frame_image = frame.convert("L")
-    frame_info = {
-        # 'id': generate_id(),
-        # 'width_orig': frame_raw.width,
-        # 'height_orig': frame_raw.height,
-        'duration': frame.info.get('duration', app.config.get("DISPLAY_DEFAULT_DELAY")),
-        # 'image_crc': crc32(frame_image.tobytes())
-        # 'data': repr([d for d in frame.tobytes()]),
-    }
-    return SerializeFrame(frame_image.tobytes()), frame_info
+    encoded_image = frame_image.tobytes()
+    if 'duration' in frame.info:
+        duration = frame.info.get('duration')
+    else:
+        duration = app.config.get("DISPLAY_DEFAULT_DELAY")
+    return bytearray(encoded_image), duration
 
 
 def make_app():

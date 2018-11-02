@@ -7,3 +7,4 @@
     - { role: ledslie-processors, become: yes }
     - { role: ledslie-content, become: yes }
     - { role: spacestate, become: yes }
+    - { role: serial2mqtt, become: yes }
