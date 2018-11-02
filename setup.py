@@ -17,6 +17,7 @@ setup(
             # 'defaults.conf',
         ],
         'spacestate': [],
+        'serial2mqtt': [],
         'processors': [
             'resources'
         ],
