@@ -2,7 +2,7 @@
 from datetime import datetime
 import logging
 import re
-from typing import Tuple
+from typing import Iterable
 
 from dateutil import parser as dateparser
 
@@ -12,7 +12,11 @@ log = logging.getLogger(__file__.split("/")[-1])
 log_fn = "../logs/#techinc.log"
 
 
-class IrcChatEvent(object):
+class IrcEvent(object):
+    pass
+
+
+class IrcChatEvent(IrcEvent):
     def __init__(self, ts, type, nick, msg=None, target=None):
         self.ts = ts
         self.type = type
@@ -24,11 +28,13 @@ class IrcChatEvent(object):
         # else:
         #     log.info("%s:%s %s %s", type, ts, nick, msg)
 
-class IrcPresenceEvent(object):
-    def __init__(self, ts, nick, type):
+
+class IrcPresenceEvent(IrcEvent):
+    def __init__(self, ts, nick, type, new_nick=None):
         self.ts = ts
         self.nick = nick
         self.type = type
+        self.new_nick = new_nick
 
 
 class IrssiParser(object):
@@ -46,7 +52,7 @@ class IrssiParser(object):
         )
         self.target_pattern = re.compile(r"(?P<target>\S+):.*")
 
-    def parse_line(self, line):
+    def parse_line(self, line) -> IrcEvent:
         line = line.strip()
         match = None
         res = None
@@ -59,7 +65,7 @@ class IrssiParser(object):
         #     log.warning("unmatched: %s" % line)
         return res
 
-    def chat_line(self, time, nick, mode, msg):
+    def chat_line(self, time, nick, mode, msg) -> IrcChatEvent:
         ts = self._parse_time(self.last_ts, time)
         match = self.target_pattern.match(msg)
         if match:
@@ -68,7 +74,7 @@ class IrssiParser(object):
             target = None
         return IrcChatEvent(ts, "msg", nick, msg, target)
 
-    def action_line(self, time, nick, msg):
+    def action_line(self, time, nick, msg) -> IrcChatEvent:
         ts = self._parse_time(self.last_ts, time)
         return IrcChatEvent(ts, "action", nick, msg)
 
@@ -80,14 +86,15 @@ class IrssiParser(object):
         date = dateparser.parse(date)
         self.last_ts = date
 
-    def presence_event(self, time, nick, host, action):
+    def presence_event(self, time, nick, host, action) -> IrcPresenceEvent:
         ts = self._parse_time(self.last_ts, time)
         return IrcPresenceEvent(ts, nick, action)
 
-    def nick_change(self, time, oldnick, newnick):
-        pass
+    def nick_change(self, time, oldnick, newnick) -> IrcPresenceEvent:
+        ts = self._parse_time(self.last_ts, time)
+        return IrcPresenceEvent(ts, oldnick, "change", new_nick=newnick)
 
-    def _parse_time(self, ts: datetime, time: str) -> Tuple[int, int]:
+    def _parse_time(self, ts: datetime, time: str) -> datetime:
         hour, minute = map(int, time.split(":"))
         tt = list(ts.timetuple())
         tt[3] = hour
@@ -96,7 +103,7 @@ class IrssiParser(object):
         return datetime(*tt[:6])
 
 
-def parse_file(parser, fd):
+def parse_file(parser, fd) -> Iterable[IrcEvent]:
     c = 0
     line = fd.readline()
     while line != "":
@@ -105,8 +112,8 @@ def parse_file(parser, fd):
         if res:
             yield res
         line = fd.readline()
-        if c > 5000:
-            break
+        # if c > 5000:
+        #     break
     log.info("c = %s" % c)
 
 
@@ -116,6 +123,7 @@ def main():
     for irc_chat in parse_file(parser, open(log_fn, 'r', errors='replace', encoding='UTF-8')):
         log.info(irc_chat)
     log.info("End")
+
 
 if __name__ == "__main__":
     main()
