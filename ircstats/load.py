@@ -4,6 +4,8 @@ import logging
 import re
 from typing import Iterable
 
+import sqlite3
+
 from dateutil import parser as dateparser
 
 logging.basicConfig(level=logging.DEBUG)
@@ -117,11 +119,77 @@ def parse_file(parser, fd) -> Iterable[IrcEvent]:
     log.info("c = %s" % c)
 
 
+class EventDatabase(object):
+    def __init__(self, filename: str):
+        self._db = sqlite3.connect(filename)
+        try:
+            self._db.execute("select * from db_version order by id desc limit 1")
+        except sqlite3.OperationalError as exc:
+            if exc.args[0] == "no such table: db_version":
+                self._create_db()
+            else:
+                raise
+
+    def add_event(self, event: IrcEvent):
+        if isinstance(event, IrcPresenceEvent):
+            self.add_presence_event(event)
+        elif isinstance(event, IrcChatEvent):
+            self.add_chat_event(event)
+        else:
+            raise RuntimeError("Cannot handle event of type %s", type(event))
+
+    def add_presence_event(self, event: IrcPresenceEvent):
+        if event.new_nick:
+            self._db.execute("""insert into presence (ts, nick, type, new_nick) values (?, ?, ?, ?)""",
+                             (event.ts, event.nick, event.type, event.new_nick))
+        else:
+            self._db.execute("""insert into presence (ts, nick, type) values (?, ?, ?)""",
+                             (event.ts, event.nick, event.type))
+
+    def add_chat_event(self, event: IrcChatEvent):
+        if event.target:
+            self._db.execute("""insert into chat (ts, nick, type, msg, target) values (?, ?, ?, ?, ?)""",
+                             (event.ts, event.nick, event.type, event.msg, event.target))
+        else:
+            self._db.execute("""insert into chat (ts, nick, type, msg) values (?, ?, ?, ?)""",
+                             (event.ts, event.nick, event.type, event.msg))
+
+    def done(self):
+        self._db.commit()
+
+    def _create_db(self):
+        self._db.execute("""create table db_version (
+            id integer primary key autoincrement,	
+            version varchar NOT NULL, 
+            ts timestamp)""")
+        self._db.execute("""CREATE TABLE chat (
+            id integer PRIMARY KEY AUTOINCREMENT,
+            ts timestamp NOT NULL,
+            nick varchar NOT NULL,
+            type varchar NOT NULL,
+            msg varchar,
+            target varchar );""")
+        self._db.execute("""CREATE TABLE presence (
+            id integer PRIMARY KEY AUTOINCREMENT,
+            ts timestamp NOT NULL,
+            nick varchar NOT NULL,
+            type varchar NOT NULL,
+            new_nick varchar );""")
+        self._db.execute("""insert into db_version (version, ts)  values (1, current_timestamp)""")
+        self._db.commit()
+
+
 def main():
     log.info("Start")
+    db = EventDatabase("irc.sqlite")
     parser = IrssiParser()
-    for irc_chat in parse_file(parser, open(log_fn, 'r', errors='replace', encoding='UTF-8')):
-        log.info(irc_chat)
+    c = 1
+    for irc_event in parse_file(parser, open(log_fn, 'r', errors='replace', encoding='UTF-8')):
+        db.add_event(irc_event)
+        if c % 100 == 0:
+            log.info("loaded Row #%d", c)
+        c += 1
+    db.done()
     log.info("End")
 
 
