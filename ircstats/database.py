@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Iterator
+from typing import Iterator, List
 
 from ircstats.events import IrcEvent, IrcPresenceEvent, IrcChatEvent
 
@@ -53,6 +53,10 @@ class EventDatabase(object):
     def add_analysis(self, id, language):
         self._db.execute("""insert into analysis (id, lang) values (?, ?)""", (id, language))
 
+    def add_nouns(self, id: int, nouns: List[str]):
+        for noun in nouns:
+            self._db.execute("""insert into noun (id, word) values (?, ?)""", (id, noun.lower()))
+
     def _create_db(self):
         self._db.execute("""create table db_version (
             id integer primary key autoincrement,	
@@ -74,5 +78,9 @@ class EventDatabase(object):
         self._db.execute("""CREATE TABLE analysis (
             id integer references chat(id),
             lang varchar);""")
+        self._db.execute("""CREATE TABLE noun (
+  
+            id integer references chat(id),
+            word varchar not null);""")
         self._db.execute("""insert into db_version (version, ts)  values (1, current_timestamp)""")
         self._db.commit()
