@@ -1,4 +1,6 @@
 import sqlite3
+from typing import Iterator
+
 from ircstats.events import IrcEvent, IrcPresenceEvent, IrcChatEvent
 
 class EventDatabase(object):
@@ -39,6 +41,18 @@ class EventDatabase(object):
     def done(self):
         self._db.commit()
 
+    def iter_chat_entries(self) -> Iterator[IrcChatEvent]:
+        cursor = self._db.cursor()
+        cursor.execute("select ts, nick, type, msg, target, id from chat order by id")
+        while True:
+            res = cursor.fetchone()
+            if res is None:
+                raise StopIteration
+            yield IrcChatEvent(*res)
+
+    def add_analysis(self, id, language):
+        self._db.execute("""insert into analysis (id, lang) values (?, ?)""", (id, language))
+
     def _create_db(self):
         self._db.execute("""create table db_version (
             id integer primary key autoincrement,	
@@ -57,5 +71,8 @@ class EventDatabase(object):
             nick varchar NOT NULL,
             type varchar NOT NULL,
             new_nick varchar );""")
+        self._db.execute("""CREATE TABLE analysis (
+            id integer references chat(id),
+            lang varchar);""")
         self._db.execute("""insert into db_version (version, ts)  values (1, current_timestamp)""")
         self._db.commit()
