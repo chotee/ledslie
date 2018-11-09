@@ -155,6 +155,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+*.sqlite
 /deploy/.vagrant/
 /deploy/*.retry
 /.vagrant/
