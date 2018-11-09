@@ -159,3 +159,4 @@ fabric.properties
 /deploy/.vagrant/
 /deploy/*.retry
 /.vagrant/
+*.weechatlog
