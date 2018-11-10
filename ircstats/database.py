@@ -50,8 +50,8 @@ class EventDatabase(object):
                 raise StopIteration
             yield IrcChatEvent(*res)
 
-    def add_analysis(self, id, language):
-        self._db.execute("""insert into analysis (id, lang) values (?, ?)""", (id, language))
+    def add_analysis(self, id, language, sentiment):
+        self._db.execute("""insert into analysis (id, lang, sentiment) values (?, ?, ?)""", (id, language, sentiment))
 
     def add_nouns(self, id: int, nouns: List[str]):
         for noun in nouns:
@@ -77,7 +77,8 @@ class EventDatabase(object):
             new_nick varchar );""")
         self._db.execute("""CREATE TABLE analysis (
             id integer references chat(id),
-            lang varchar);""")
+            lang varchar,
+            sentiment float);""")
         self._db.execute("""CREATE TABLE noun (
   
             id integer references chat(id),
