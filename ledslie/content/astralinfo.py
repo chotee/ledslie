@@ -45,7 +45,7 @@ class AstralContent(GenericContent):
 
     def publish_astral(self, now=None):
         """I am called every minute."""
-
+        self.log.info("Checking astral events.")
         def _logFailure(failure):
             self.log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
