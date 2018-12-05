@@ -39,8 +39,11 @@ def serial2mqtt():
         text += msg
         msg = s.read().decode()
     log.debug(text)
-    sender_id, message = _parse_line(text)
-    mqtt_client.publish(MQTT_TOPIC_FROM_SERIAL+"/"+sender_id, message)
+    try:
+        sender_id, message = _parse_line(text)
+        mqtt_client.publish(MQTT_TOPIC_FROM_SERIAL+"/"+sender_id, message)
+    except IndexError:
+        mqtt_client.publish(MQTT_TOPIC_FROM_SERIAL + "/error", text)
 
 
 print("Starting")

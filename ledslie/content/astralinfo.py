@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from twisted.internet import reactor, task
 from twisted.internet.defer import DeferredList
@@ -27,7 +27,7 @@ from astral import Astral
 from ledslie.config import Config
 from ledslie.content.generic import GenericContent, CreateContent
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_1LINE
-from ledslie.messages import TextSingleLineLayout
+from ledslie.messages import TextSingleLineLayout, TextTripleLinesLayout
 
 
 class AstralContent(GenericContent):
@@ -45,7 +45,7 @@ class AstralContent(GenericContent):
 
     def publish_astral(self, now=None):
         """I am called every minute."""
-
+        self.log.info("Checking astral events.")
         def _logFailure(failure):
             self.log.debug("reported {message}", message=failure.getErrorMessage())
             return failure
@@ -59,11 +59,11 @@ class AstralContent(GenericContent):
 
         moon_msg = self.moon_message(now)
         if moon_msg:
-            deferreds.append(self._create_msg('moon', moon_msg))
+            deferreds.append(self._create_single_msg('moon', moon_msg))
 
         solar_msg = self.sun_message(now)
         if solar_msg:
-            deferreds.append(self._create_msg('solar', solar_msg))
+            deferreds.append(self._create_multi_msg('solar', [solar_msg, self.light_time(), self.dark_time()]))
 
         if deferreds:
             dl = DeferredList(deferreds)
@@ -72,7 +72,17 @@ class AstralContent(GenericContent):
         else:
             return None
 
-    def _create_msg(self, prog_name, solar_msg):
+    def light_time(self, now=None) -> str:
+        now = self._now(now)
+        start, end = self.city.daylight(now.date())
+        return "Day:  % 8s" % str(end-start)
+
+    def dark_time(self, now=None) -> str:
+        now = self._now(now)
+        start, end = self.city.daylight(now.date())
+        return "Night:% 8s" % str(timedelta(days=1)- (end-start))
+
+    def _create_single_msg(self, prog_name, solar_msg):
         msg = TextSingleLineLayout()
         msg.text = solar_msg
         msg.program = prog_name
@@ -80,9 +90,18 @@ class AstralContent(GenericContent):
         msg.font_size = 15
         return self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg)
 
+    def _create_multi_msg(self, prog_name, solar_msg):
+        msg = TextTripleLinesLayout()
+        msg.lines = solar_msg
+        msg.program = prog_name
+        self.size = '7x6'
+        msg.valid_time = 60
+        return self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_1LINE, message=msg)
+
+
     def _now(self, dt=None):
         dt = datetime.now() if dt is None else dt
-        dt = pytz.timezone('Europe/Amsterdam').localize(dt)
+        dt = pytz.timezone(self.config['TIMEZONE']).localize(dt)
         return dt
 
     def moon_message(self, now: datetime):
@@ -116,6 +135,13 @@ class AstralContent(GenericContent):
                 return "Sunset now"
             if time_to_sunset < pretime:
                 return "Sunset in %sm" % int(time_to_sunset / 60)
+
+        time_to_midnight = (self.city.solar_midnight(now) - now).total_seconds()
+        if time_to_midnight > 0:
+            if time_to_midnight < 60:
+                return "Solar midnight now"
+            if time_to_midnight < pretime:
+                return "S. Midnight in %sm" % int(time_to_midnight / 60)
 
         return None
 

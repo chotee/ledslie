@@ -59,3 +59,16 @@ class TestAstralContent(object):
         assert "Sunset now" == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 16, 37, 0)))
         assert None == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 16, 39, 0)))
 
+        assert None == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 16, 5, 0)))
+        assert "S. Midnight in 13m" == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 0, 30, 0)))
+        assert "S. Midnight in 3m" == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 0, 40, 0)))
+        assert "Solar midnight now" == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 0, 43, 0)))
+        assert None == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 0, 50, 0)))
+
+    def test_light_time(self, astralinfo: AstralContent):
+        assert "Day:   7:46:23" == astralinfo.light_time(datetime(2018, 1, 1, 12, 15, 0))
+        assert "Day:  16:27:09" == astralinfo.light_time(datetime(2018, 6, 1, 12, 15, 0))
+
+    def test_dark_time(self, astralinfo: AstralContent):
+        assert "Night:16:13:37" == astralinfo.dark_time(datetime(2018, 1, 1, 12, 15, 0))
+        assert "Night: 7:32:51" == astralinfo.dark_time(datetime(2018, 6, 1, 12, 15, 0))

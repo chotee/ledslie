@@ -35,6 +35,7 @@ PROGRESS_DISPLAY_DURATION = 5*1000  # Miliseconds that the progress message is s
 
 LOCATION_LAT = 52.34557
 LOCATION_LON =  4.82647
+TIMEZONE = 'Europe/Amsterdam'
 
 RAIN_DATA_SOURCE = "https://gpsgadget.buienradar.nl/data/raintext/?lat=%s&lon=%s" % (LOCATION_LAT, LOCATION_LON)
 RAIN_UPDATE_FREQ = 5*60  # Seconds between updates

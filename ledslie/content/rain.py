@@ -16,11 +16,10 @@
 
 import os
 
-from twisted.internet import _sslverify
+from twisted.internet.defer import CancelledError
 from twisted.logger import Logger
 
 from twisted.internet import reactor, task
-from twisted.python.failure import Failure
 from twisted.web.client import readBody
 import treq
 
@@ -40,6 +39,10 @@ class RainContent(GenericContent):
         self.task = task.LoopingCall(self.createForecast)
         self.task.start(self.config['RAIN_UPDATE_FREQ'], now=True)
 
+    def _logTimeout(self, failure):
+        failure.trap(CancelledError)
+        self.log.error("Timeout of request to %s" % self.config["RAIN_DATA_SOURCE"])
+
     def _logFailure(self, failure):
         self.log.error("reported failure: {message}", message=failure.getErrorMessage())
         return failure
@@ -52,11 +55,12 @@ class RainContent(GenericContent):
         url = self.config["RAIN_DATA_SOURCE"]
         self.log.debug("Grabbing rain forecast URL '%s'" % url)
         d = treq.get(url, timeout=5)
-        d.addCallbacks(self.grab_http_response, self._logFailure)
-        d.addCallbacks(self.parse_forecast_results, self._logFailure)
-        d.addCallbacks(self.create_forcast, self._logFailure)
-        d.addCallbacks(self.publish_forcast, self._logFailure)
+        d.addCallbacks(self.grab_http_response, self._logTimeout)
+        d.addCallbacks(self.parse_forecast_results)
+        d.addCallbacks(self.create_forcast)
+        d.addCallbacks(self.publish_forcast)
         d.addCallback(self._logSuccess, url)
+        d.addErrback(self._logFailure, url)
 
     def create_forcast(self, data):
         if data[0][0] == 0:  # It's currently dry
