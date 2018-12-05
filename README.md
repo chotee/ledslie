@@ -13,8 +13,7 @@ Ledslie is based around the MQTT broker framework.
 It consists of various processes that do one particular job.
 
 * [Site](ledslie/interface/site.py) is a website based on [Flask](http://flask.pocoo.org/) that users can interact with directly
-* [Serializer](ledslie/processors/serializer.py) receives raw frame-types and sends them to the display.
-* [Sequencer](ledslie/processors/scheduler.py) maintains a queue of frames and sends the next to Serializer.
+* [Scheduler](ledslie/processors/scheduler.py) maintains a queue of frames and sends the next to the serial port. 
 * [Typesetter](ledslie/processors/typesetter.py) takes a text and generates the frame to be displayed. 
 
 Ledslie has various dependencies on other projects.
@@ -25,6 +24,7 @@ Ledslie has various dependencies on other projects.
 
 ## Bonus tracks:
 * [Spacestate](spacestate/run.py) maintains the 'spacestate' MQTT topic with the current spacestate
+* [serial2mqtt](serial2mqtt/run.py) publishes input for a serial port to mqtt. This is a Painlessmesh to mqtt bridge. 
 
 ## Deploying
 To test, use [vagrant](https://www.vagrantup.com/) to run a VM that has all the system running (except, likely, the display)
