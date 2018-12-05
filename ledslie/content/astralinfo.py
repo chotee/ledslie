@@ -117,6 +117,13 @@ class AstralContent(GenericContent):
             if time_to_sunset < pretime:
                 return "Sunset in %sm" % int(time_to_sunset / 60)
 
+        time_to_midnight = (self.city.solar_midnight(now) - now).total_seconds()
+        if time_to_midnight > 0:
+            if time_to_midnight < 60:
+                return "Solar midnight now"
+            if time_to_midnight < pretime:
+                return "S. Midnight in %sm" % int(time_to_midnight / 60)
+
         return None
 
 
