@@ -15,12 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 from twisted.internet import reactor, task
-from twisted.internet.protocol import ClientCreator
 from twisted.logger import Logger
 
 from ledslie.config import Config
 from ledslie.content.generic import CreateContent, GenericContent
-from ledslie.content.mpd import MPDProtocol
+from ledslie.content.mpd import MPDFactory
 from ledslie.definitions import LEDSLIE_TOPIC_TYPESETTER_3LINES
 from ledslie.messages import TextTripleLinesLayout
 
@@ -37,6 +36,7 @@ class MpdPlaying(GenericContent):
     def onMpdConnected(self, mpdProtocol):
         self.log.info("MPD connected.")
         self.mpd = mpdProtocol
+        self.get_playing_state()
 
     def onBrokerConnected(self):
         self.update_task = task.LoopingCall(self.get_playing_state)
@@ -54,6 +54,7 @@ class MpdPlaying(GenericContent):
             self.playing_state = True
         else:
             if self.playing_state:
+                self.log.info("No more songs playing")
                 self.remove_display(self.program_name)
             self.playing_state = False
 
@@ -71,7 +72,7 @@ class MpdPlaying(GenericContent):
         msg.duration = self.config['INFO_DISPLAY_DURATION']
         msg.program = self.program_name
         msg.size = '6x7'
-        self.log.debug(repr(playing_info))
+        self.log.info(repr(playing_info))
         d = self.publish(topic=LEDSLIE_TOPIC_TYPESETTER_3LINES, message=msg, qos=1)
         d.addCallbacks(_logAll, self._logFailure)
         return d
@@ -85,13 +86,23 @@ def connection_error(failure):
     Logger().error("connection failure: {message}", message=failure.getErrorMessage())
 
 
+
+def _mpd_connection_lost(service):
+    service.mpd = None
+
 if __name__ == '__main__':
     ns = __file__.split(os.sep)[-1]
     config = Config(envvar_silent=False)
 
-    mpd = ClientCreator(reactor, MPDProtocol)
+    mpdFactory = MPDFactory()
     service = CreateContent(MpdPlaying)
-    d = mpd.connectTCP(config['MPD_HOST'], config['MPD_PORT'])
-    d.addCallback(service.onMpdConnected)
-    d.addErrback(connection_error)
+
+    def connection_made(mpd_connection):
+        service.onMpdConnected(mpd_connection)
+    mpdFactory.connectionMade = connection_made
+
+    def connection_lost(service):
+        service.mpd = None
+    mpdFactory.connectionLost = connection_lost
+    reactor.connectTCP(config['MPD_HOST'], config['MPD_PORT'], mpdFactory)
     reactor.run()
