@@ -106,7 +106,7 @@ class AstralContent(GenericContent):
 
     def moon_message(self, now: datetime):
         moon_phase = self.city.moon_phase(now)
-        if moon_phase == 21:
+        if moon_phase == 14:
             return "Full moon"
         if moon_phase == 0:
             return "New moon"
