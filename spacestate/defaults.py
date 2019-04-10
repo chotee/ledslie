@@ -10,7 +10,7 @@ MQTT_BROKER_PORT = 1883  # default port for non-tls connection
 MQTT_BROKER_CONN_STRING = 'tcp:%s:%s' % (MQTT_BROKER_URL, MQTT_BROKER_PORT)
 MQTT_KEEPALIVE = 60  # set the time interval for sending a ping to the broker to 5 seconds
 
-SPACESTATE_URL = "http://techinc.nl/space/spacestate"
+SPACESTATE_URL = "https://techinc.nl/space/spacestate"
 SPACESTATE_POLL_FREQ = 5.0
 SPACESTATE_MQTT_TOPIC = 'spacestate'
 
