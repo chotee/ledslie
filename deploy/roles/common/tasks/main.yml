@@ -26,3 +26,17 @@
   args:
     creates:  "/home/{{ ansible_user }}/pyenv"
   become: no
+
+- name: Add admin user acounts
+  user:
+    name: "{{item}}"
+    state: present
+    groups: sudo
+  loop: "{{admin_users}}"
+
+- name: install authorized_keys
+  authorized_key:
+    user: "{{item}}"
+    state: present
+    key: "{{ lookup('file', 'keys/' + item + '.pub') }}"
+  loop: "{{admin_users}}"

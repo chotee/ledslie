@@ -1,0 +1,5 @@
+- name: restart mosquitto
+  service:
+    name: mosquitto
+    state: restarted
+    enabled: yes
