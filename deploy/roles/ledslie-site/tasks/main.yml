@@ -8,7 +8,7 @@
 - name: Install system dependencies
   apt:
     name: "{{ item }}"
-  with_items:
+  loop:
     - python3-dev
     - libjpeg-dev
     - libfreetype6-dev
@@ -25,7 +25,7 @@
   pip:
     name: "{{ item }}"
     virtualenv: "/home/{{ ansible_user }}/pyenv"
-  with_items:
+  loop:
     - setuptools>=37
     - pip>=9
 

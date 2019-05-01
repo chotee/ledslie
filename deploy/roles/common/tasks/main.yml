@@ -15,7 +15,7 @@
 - name: Install common python packages
   apt:
     name: "{{ item }}"
-  with_items:
+  loop:
     - git
     - python-pip
     - python-virtualenv
