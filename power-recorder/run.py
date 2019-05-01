@@ -2,8 +2,12 @@ import os
 import sqlite3
 import sys
 import time
+import logging
 
 import paho.mqtt.client as mqtt
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger()
 
 
 class RecordParts:
@@ -64,10 +68,12 @@ def event_client(conn):
     # handles reconnecting.
     # Other loop*() functions are available that give a threaded interface and a
     # manual interface.
+    log.info("Start the loop.")
     client.loop_forever()
 
 
 def create_db(db_filename: str):
+    log.info("Creating database in '%s'", db_filename)
     conn = sqlite3.connect(db_filename)
     c = conn.cursor()
     c.execute("""CREATE TABLE power (
@@ -81,8 +87,11 @@ def create_db(db_filename: str):
 
 def main(argv: dict):
     db_filename = 'power.sqlite'
+    if 'SQLITE_DB_FILE' in os.environ:
+        db_filename = os.environ['SQLITE_DB_FILE']
     if not os.path.exists(db_filename):
         create_db(db_filename)
+    log.info("Opening database file '%s'", db_filename)
     event_client(sqlite3.connect(db_filename))
 
 if __name__ == "__main__":
