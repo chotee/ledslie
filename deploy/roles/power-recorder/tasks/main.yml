@@ -1,0 +1,21 @@
+- name: Install common python packages
+  apt:
+    name: "{{ item }}"
+  loop:
+    - sqlite3
+
+- name: Installing systemd templates
+  template:
+    src: "power-recorder.service-tmpl"
+    dest: "/etc/systemd/system/power-recorder.service"
+
+- name: Reload systemd config
+  command: systemctl daemon-reload
+
+- name: Start power-recorder service
+  systemd:
+    name: "power-recorder"
+    state: restarted
+    enabled: yes
+  tags:
+    - update

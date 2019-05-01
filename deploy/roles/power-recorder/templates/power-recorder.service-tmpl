@@ -1,0 +1,12 @@
+[Unit]
+Description=Power recorder
+After=network.target
+
+[Service]
+User={{ ledslie_user }}
+ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/power-recorder/run.py
+Environment="SQLITE_DB_FILE=/home/{{ ledslie_user }}/power-recorder.sqlite.db"
+
+[Install]
+WantedBy=multi-user.target
+
