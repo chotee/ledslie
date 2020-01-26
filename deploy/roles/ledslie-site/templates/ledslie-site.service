@@ -1,6 +1,6 @@
 [Unit]
 Description=Ledslie website
-After=network.target
+After=network.target nginx.service
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
@@ -10,10 +10,3 @@ ExecStartPre=-/bin/mkdir /var/run/ledslie/
 ExecStartPre=/bin/chown {{ ansible_user }}:www-data /var/run/ledslie/
 ExecStartPre=/bin/chmod 771 /var/run/ledslie/
 ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie.fcgi
-#ExecReload=/bin/kill -HUP $MAINPID
-#KillMode=process
-#Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-

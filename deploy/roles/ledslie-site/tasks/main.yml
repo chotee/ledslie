@@ -67,6 +67,8 @@
     src: ledslie-site.service
     dest: /etc/systemd/system/ledslie-site.service
   become: yes
+  tags:
+    - systemd
 
 - name: Start ledslie site services
   systemd:
@@ -76,6 +78,7 @@
   become: yes
   tags:
     - update
+    - systemd
 
 - name: Copy nginx configuration
   template:
@@ -102,3 +105,5 @@
     state: restarted
     enabled: yes
   become: yes
+  tags:
+    - systemd

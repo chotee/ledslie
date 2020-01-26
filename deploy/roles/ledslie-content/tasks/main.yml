@@ -3,15 +3,16 @@
     src: "ledslie-content.service-tmpl"
     dest: "/etc/systemd/system/ledslie-{{ item }}.service"
   with_items: "{{ledslie_content}}"
-
-- name: Reload systemd config
-  command: systemctl daemon-reload
+  tags:
+    - systemd
 
 - name: Start ledslie content services
   systemd:
     name: "ledslie-{{ item }}"
     state: restarted
     enabled: yes
+    daemon_reload: yes
   with_items: "{{ledslie_content}}"
   tags:
     - update
+    - systemd

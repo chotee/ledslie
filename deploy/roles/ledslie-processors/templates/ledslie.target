@@ -1,0 +1,6 @@
+[Unit]
+Description=Starts ledslie service
+Documentation=https://wiki.techinc.nl/index.php/Ledslie
+Requires=multi-user.target
+After=network.target
+AllowIsolate=No
