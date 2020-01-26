@@ -17,7 +17,7 @@ class TestAstralContent(object):
 
     def test_publish_astral(self, astralinfo: AstralContent):
         # moon message
-        astralinfo.publish_astral(datetime(2018, 1, 8, 12, 0, 0))
+        astralinfo.publish_astral(datetime(2018, 1, 2, 12, 0, 0))
         assert 1 == len(astralinfo.protocol._published_messages)
         astralinfo.protocol._published_messages = []
 
@@ -27,7 +27,7 @@ class TestAstralContent(object):
         astralinfo.protocol._published_messages = []
 
         # Moon and Solar message
-        astralinfo.publish_astral(datetime(2018, 1, 8, 12, 30, 0))
+        astralinfo.publish_astral(datetime(2018, 1, 2, 12, 30, 0))
         assert 2 == len(astralinfo.protocol._published_messages)
         astralinfo.protocol._published_messages = []
 
@@ -37,7 +37,7 @@ class TestAstralContent(object):
 
     def test_moon_message(self, astralinfo: AstralContent):
         assert None == astralinfo.moon_message(datetime(2018, 1, 1, 12, 0, 0))
-        assert "Full moon" == astralinfo.moon_message(datetime(2018, 1, 8, 12, 0, 0))
+        assert "Full moon" == astralinfo.moon_message(datetime(2018, 1, 2, 12, 0, 0))
         assert "New moon" == astralinfo.moon_message(datetime(2018, 1, 17, 12, 0, 0))
 
     def test_sun_message(self, astralinfo: AstralContent):
@@ -66,9 +66,9 @@ class TestAstralContent(object):
         assert None == astralinfo.sun_message(astralinfo._now(datetime(2018, 1, 1, 0, 50, 0)))
 
     def test_light_time(self, astralinfo: AstralContent):
-        assert "Day:   7:46:23" == astralinfo.light_time(datetime(2018, 1, 1, 12, 15, 0))
-        assert "Day:  16:27:09" == astralinfo.light_time(datetime(2018, 6, 1, 12, 15, 0))
+        assert "Day:   7:46:46" == astralinfo.light_time(datetime(2018, 1, 1, 12, 15, 0))
+        assert "Day:  16:27:33" == astralinfo.light_time(datetime(2018, 6, 1, 12, 15, 0))
 
     def test_dark_time(self, astralinfo: AstralContent):
-        assert "Night:16:13:37" == astralinfo.dark_time(datetime(2018, 1, 1, 12, 15, 0))
-        assert "Night: 7:32:51" == astralinfo.dark_time(datetime(2018, 6, 1, 12, 15, 0))
+        assert "Night:16:13:14" == astralinfo.dark_time(datetime(2018, 1, 1, 12, 15, 0))
+        assert "Night: 7:32:27" == astralinfo.dark_time(datetime(2018, 6, 1, 12, 15, 0))

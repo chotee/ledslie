@@ -16,15 +16,23 @@
     src: "{{ item }}.service"
     dest: "/etc/systemd/system/{{ item }}.service"
   with_items: "{{ledslie_processor}}"
+  tags:
+    - systemd
 
-- name: Reload systemd config
-  command: systemctl daemon-reload
+- name: Installing ledslie target
+  template:
+    src: "ledslie.target"
+    dest: "/etc/systemd/system/ledslie.target"
+  tags:
+    - systemd
 
 - name: Start ledslie processer services
   systemd:
-    name: "{{ item }}"
+    name: ledslie.target
     state: restarted
     enabled: yes
+    daemon_reload: yes
   with_items: "{{ledslie_processor}}"
   tags:
     - update
+    - systemd

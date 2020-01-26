@@ -46,15 +46,18 @@ DestinationCode_to_name = {
     'NCS': 'CS',
     'SLL': 'Ly',
     'AMS': 'Am',
-    'M09501429': 'AP',
-    'M19501429': 'AP',
+    'M09501429': 'SCH',
+    'M19501429': 'SCH',
+    'M19534388': 'SCH',
     'M19505436': 'Ly',
     'M09505436': 'Ly',
+    'SNP': 'SNP',
 }
 DestinationCode_ignore = {  # These are final stops walking distance from the space. No need to waste screen on these.
     'NSN',  # Nieuw Sloten
     'SLV',  # Slotervaart
     'NNSN',  # Nieuw Sloten
+    'ONPN',  # Oudenaardeplantsoen
 }
 
 class Transports(object):

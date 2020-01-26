@@ -155,6 +155,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+/pyenv/
 /deploy/.vagrant/
 /deploy/*.retry
 /.vagrant/

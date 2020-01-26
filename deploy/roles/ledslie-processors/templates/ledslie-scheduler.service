@@ -1,15 +1,14 @@
 [Unit]
 Description=Ledslie scheduler
-After=network.target
+ReloadPropagatedFrom=ledslie.target
+Requires=mosquitto.service
+After=mosquitto.service
 
 [Service]
 EnvironmentFile=-/etc/default/ledslie
 User={{ledslie_user}}
 ExecStart=/home/{{ ansible_user }}/pyenv/bin/python /home/{{ ansible_user }}/src/ledslie/processors/scheduler.py
-#ExecReload=/bin/kill -HUP $MAINPID
-#KillMode=process
-#Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+RequiredBy=ledslie.target
 
